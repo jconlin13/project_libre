@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String   @id @default(uuid())
+  name                String
+  email               String   @unique
+  avatarUrl           String?  @map("avatar_url")
+  hardcoverUserId     String?  @map("hardcover_user_id")
+  hardcoverUsername    String?  @map("hardcover_username")
+  hardcoverApiToken   String?  @map("hardcover_api_token")
+  supabaseAuthId      String   @unique @map("supabase_auth_id")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  householdMembers    HouseholdMember[]
+  recommendationsSent Recommendation[]  @relation("RecommendationFrom")
+  recommendationsReceived Recommendation[] @relation("RecommendationTo")
+  plusOnes            PlusOne[]
+  snapshots           Snapshot[]
+
+  @@map("users")
+}
+
+model Household {
+  id        String   @id @default(uuid())
+  name      String
+  inviteCode String  @unique @map("invite_code")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  members   HouseholdMember[]
+
+  @@map("households")
+}
+
+model HouseholdMember {
+  id          String   @id @default(uuid())
+  householdId String   @map("household_id")
+  userId      String   @map("user_id")
+  role        String   @default("member")
+
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId])
+  @@map("household_members")
+}
+
+model Recommendation {
+  id              String   @id @default(uuid())
+  fromUserId      String   @map("from_user_id")
+  toUserId        String   @map("to_user_id")
+  hardcoverBookId String   @map("hardcover_book_id")
+  bookTitle       String?  @map("book_title")
+  bookAuthor      String?  @map("book_author")
+  bookCoverUrl    String?  @map("book_cover_url")
+  note            String?
+  status          String   @default("pending")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  fromUser        User     @relation("RecommendationFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser          User     @relation("RecommendationTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@map("recommendations")
+}
+
+model PlusOne {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  hardcoverBookId String   @map("hardcover_book_id")
+  bookTitle       String?  @map("book_title")
+  bookAuthor      String?  @map("book_author")
+  bookCoverUrl    String?  @map("book_cover_url")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, hardcoverBookId])
+  @@map("plus_ones")
+}
+
+model Snapshot {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  type            String
+  hardcoverBookId String   @map("hardcover_book_id")
+  rating          Float?
+  progressPct     Float?   @map("progress_pct")
+  updatedAt       DateTime @default(now()) @map("updated_at")
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("snapshots")
+}
