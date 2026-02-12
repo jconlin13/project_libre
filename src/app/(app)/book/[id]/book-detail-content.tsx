@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Star, Library, ExternalLink, BookOpen } from 'lucide-react'
+import { ArrowLeft, Star, ExternalLink, BookOpen } from 'lucide-react'
+import { AmazonIcon } from '@/components/icons/amazon-icon'
+import { LibbyIcon } from '@/components/icons/libby-icon'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -187,6 +189,7 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
 
   const libbyUrl = `https://libbyapp.com/search/${encodeURIComponent(`title:${book.title} author:${author}`)}`
   const hardcoverUrl = book.slug ? `https://hardcover.app/books/${book.slug}` : null
+  const amazonUrl = `https://www.amazon.com/s?k=${encodeURIComponent(`${book.title} ${author}`)}&i=stripbooks`
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -254,6 +257,36 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                 </div>
               </div>
 
+              {/* Action buttons — next to cover/rating area */}
+              <div className="flex flex-col gap-2 pt-1">
+                <a href={libbyUrl} target="_blank" rel="noopener noreferrer">
+                  <Button
+                    className="w-full justify-start gap-2 text-white hover:opacity-90"
+                    style={{ backgroundColor: 'rgb(93, 33, 55)' }}
+                  >
+                    <LibbyIcon className="h-5 w-5" />
+                    Search on Libby
+                  </Button>
+                </a>
+                {hardcoverUrl && (
+                  <a href={hardcoverUrl} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" className="w-full justify-start gap-2">
+                      <ExternalLink className="h-4 w-4" />
+                      View on Hardcover
+                    </Button>
+                  </a>
+                )}
+                <a href={amazonUrl} target="_blank" rel="noopener noreferrer">
+                  <Button
+                    className="w-full justify-start gap-2 text-black hover:opacity-90"
+                    style={{ backgroundColor: 'rgb(244, 192, 118)' }}
+                  >
+                    <AmazonIcon className="h-5 w-5" />
+                    View on Amazon
+                  </Button>
+                </a>
+              </div>
+
               {/* Progress */}
               {progressPercent !== null && (
                 <div className="space-y-2">
@@ -298,23 +331,6 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                 </div>
               )}
 
-              {/* Action buttons */}
-              <div className="flex flex-wrap gap-3 pt-4">
-                <a href={libbyUrl} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline">
-                    <Library className="mr-2 h-4 w-4" />
-                    Search on Libby
-                  </Button>
-                </a>
-                {hardcoverUrl && (
-                  <a href={hardcoverUrl} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline">
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      View on Hardcover
-                    </Button>
-                  </a>
-                )}
-              </div>
             </div>
           </div>
         </CardContent>
