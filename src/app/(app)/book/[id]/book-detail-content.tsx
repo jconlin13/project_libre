@@ -388,9 +388,9 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                 <p className="text-sm text-muted-foreground italic">Not in your library</p>
               ) : null}
 
-              {/* Rating + Action buttons — side by side */}
+              {/* Rating + Progress + Action buttons — side by side */}
               <div className="flex flex-col sm:flex-row gap-4">
-                {/* Rating — clickable half-stars */}
+                {/* Rating + Progress stacked */}
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground mb-1">Your Rating</p>
                   <StarRating rating={userRating} onRate={handleRating} size="lg" />
@@ -402,6 +402,87 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                       Clear rating
                     </button>
                   )}
+
+                  {/* Your Progress — below rating, same column width */}
+                  <div className="space-y-2 mt-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium flex items-center gap-1">
+                        <BookOpen className="h-4 w-4" />
+                        Your Progress
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          className={`text-[11px] px-2 py-0.5 rounded transition-colors ${progressMode === 'percent' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
+                          onClick={() => setProgressMode('percent')}
+                        >
+                          %
+                        </button>
+                        <button
+                          className={`text-[11px] px-2 py-0.5 rounded transition-colors ${progressMode === 'pages' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
+                          onClick={() => setProgressMode('pages')}
+                        >
+                          Pages
+                        </button>
+                      </div>
+                    </div>
+                    <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all"
+                        style={{ width: `${progressPercent ?? 0}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      {progressMode === 'percent' ? (
+                        <span>{progressPercent ?? 0}% complete</span>
+                      ) : (
+                        <span>
+                          {readingProgress?.progress_pages
+                            ? `Page ${readingProgress.progress_pages}${book.pages ? ` of ${book.pages}` : ''}`
+                            : `0${book.pages ? ` of ${book.pages}` : ''} pages`}
+                        </span>
+                      )}
+                      <Button
+                        size="sm"
+                        variant={editingProgress ? 'outline' : 'default'}
+                        onClick={() => {
+                          setEditingProgress(!editingProgress)
+                          setProgressInput('')
+                        }}
+                        className="h-6 text-[11px] px-3"
+                      >
+                        {editingProgress ? 'Cancel' : 'Update'}
+                      </Button>
+                    </div>
+                    {editingProgress && (
+                      <div className="flex items-end gap-2 pt-1">
+                        <div className="flex-1">
+                          <Label className="text-[11px]">
+                            {progressMode === 'pages'
+                              ? `Page${book.pages ? ` (of ${book.pages})` : ''}`
+                              : '% complete'}
+                          </Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={progressMode === 'percent' ? 100 : book.pages || 9999}
+                            placeholder={progressMode === 'pages' ? 'e.g. 150' : 'e.g. 45'}
+                            value={progressInput}
+                            onChange={e => setProgressInput(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleProgressSave()}
+                            className="h-8 text-xs mt-1"
+                          />
+                        </div>
+                        <Button
+                          onClick={handleProgressSave}
+                          size="sm"
+                          className="h-8 text-xs"
+                          disabled={savingProgress}
+                        >
+                          {savingProgress ? 'Saving...' : 'Save'}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Action buttons */}
@@ -442,87 +523,6 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                     </Button>
                   </a>
                 </div>
-              </div>
-
-              {/* Your Progress — editable, toggleable between % and pages */}
-              <div className="space-y-2 sm:max-w-[60%]">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium flex items-center gap-1">
-                    <BookOpen className="h-4 w-4" />
-                    Your Progress
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      className={`text-[11px] px-2 py-0.5 rounded transition-colors ${progressMode === 'percent' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
-                      onClick={() => setProgressMode('percent')}
-                    >
-                      %
-                    </button>
-                    <button
-                      className={`text-[11px] px-2 py-0.5 rounded transition-colors ${progressMode === 'pages' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
-                      onClick={() => setProgressMode('pages')}
-                    >
-                      Pages
-                    </button>
-                  </div>
-                </div>
-                <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all"
-                    style={{ width: `${progressPercent ?? 0}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  {progressMode === 'percent' ? (
-                    <span>{progressPercent ?? 0}% complete</span>
-                  ) : (
-                    <span>
-                      {readingProgress?.progress_pages
-                        ? `Page ${readingProgress.progress_pages}${book.pages ? ` of ${book.pages}` : ''}`
-                        : `0${book.pages ? ` of ${book.pages}` : ''} pages`}
-                    </span>
-                  )}
-                  <Button
-                    size="sm"
-                    variant={editingProgress ? 'outline' : 'default'}
-                    onClick={() => {
-                      setEditingProgress(!editingProgress)
-                      setProgressInput('')
-                    }}
-                    className="h-6 text-[11px] px-3"
-                  >
-                    {editingProgress ? 'Cancel' : 'Update'}
-                  </Button>
-                </div>
-                {editingProgress && (
-                  <div className="flex items-end gap-2 pt-1">
-                    <div className="flex-1">
-                      <Label className="text-[11px]">
-                        {progressMode === 'pages'
-                          ? `Page${book.pages ? ` (of ${book.pages})` : ''}`
-                          : '% complete'}
-                      </Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={progressMode === 'percent' ? 100 : book.pages || 9999}
-                        placeholder={progressMode === 'pages' ? 'e.g. 150' : 'e.g. 45'}
-                        value={progressInput}
-                        onChange={e => setProgressInput(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleProgressSave()}
-                        className="h-8 text-xs mt-1"
-                      />
-                    </div>
-                    <Button
-                      onClick={handleProgressSave}
-                      size="sm"
-                      className="h-8 text-xs"
-                      disabled={savingProgress}
-                    >
-                      {savingProgress ? 'Saving...' : 'Save'}
-                    </Button>
-                  </div>
-                )}
               </div>
 
               {/* Metadata */}

@@ -139,19 +139,20 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
       </div>
 
       {/* Bottom zone: rating, progress, update button — aligned across cards */}
+      {/* All slots always rendered (visible or invisible) so cards align vertically */}
       <div className="flex flex-col items-center w-full mt-auto pt-1">
-        {/* Rating stars — half-star support, clickable */}
+        {/* Rating stars — always present */}
         <div onClick={(e) => { e.preventDefault(); e.stopPropagation() }}>
           <StarRating rating={currentRating} onRate={handleRating} size="sm" />
         </div>
 
-        {/* Progress text */}
-        {progressPercent !== null && (
-          <p className="text-[11px] text-muted-foreground mt-0.5">{progressPercent}%</p>
-        )}
+        {/* Progress text — always takes space */}
+        <p className={`text-[11px] mt-0.5 ${progressPercent !== null ? 'text-muted-foreground' : 'invisible'}`}>
+          {progressPercent !== null ? `${progressPercent}%` : '\u00A0'}
+        </p>
 
-        {/* Update Progress button with popover */}
-        {onUpdateProgress && (
+        {/* Update Progress button — always takes space */}
+        {onUpdateProgress ? (
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
               <button
@@ -207,6 +208,8 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
               </div>
             </PopoverContent>
           </Popover>
+        ) : (
+          <div className="mt-1.5 invisible text-[11px] px-2 py-0.5">&nbsp;</div>
         )}
       </div>
     </div>
