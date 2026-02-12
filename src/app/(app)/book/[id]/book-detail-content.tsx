@@ -360,8 +360,8 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                             } : undefined}
                           >
                             <StatusIcon
-                              className="h-4 w-4"
-                              style={isActive ? { color: config.textColor } : { color: 'var(--muted-foreground)' }}
+                              className="h-4 w-4 flex-shrink-0"
+                              style={{ color: config.textColor }}
                             />
                             {config.label}
                           </button>
