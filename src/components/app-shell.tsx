@@ -100,7 +100,7 @@ export function AppShell({ children, user }: AppShellProps) {
             </Sheet>
 
             <Link href="/dashboard" className="flex items-center gap-2">
-              <Image src="/logos/logo.png" alt="Family Book Club" width={28} height={28} className="rounded" />
+              <Image src="/logos/logo.svg" alt="Family Book Club" width={28} height={28} className="rounded" />
               <span className="font-semibold hidden sm:inline">Family Book Club</span>
             </Link>
 
