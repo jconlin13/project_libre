@@ -42,33 +42,21 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
 
         setBook(bookData)
 
+        // Parse reading and finished lists once
+        const readingBooks = readingRes.ok ? (await readingRes.json()).data || [] : []
+        const finishedBooks = finishedRes.ok ? (await finishedRes.json()).data || [] : []
+
         // Check if currently reading this book
-        if (readingRes.ok) {
-          const readingJson = await readingRes.json()
-          const readingBooks = readingJson.data || []
-          const match = readingBooks.find((ub: any) => String(ub.book.id) === bookId)
-          if (match) {
-            const read = match.user_book_reads?.[0]
-            if (read) {
-              setReadingProgress({ progress: read.progress, progress_pages: read.progress_pages })
-            }
+        const readingMatch = readingBooks.find((ub: any) => String(ub.book.id) === bookId)
+        if (readingMatch) {
+          const read = readingMatch.user_book_reads?.[0]
+          if (read) {
+            setReadingProgress({ progress: read.progress, progress_pages: read.progress_pages })
           }
         }
 
         // Check rating from reading or finished books
-        const allUserBooks: any[] = []
-
-        if (readingRes.ok) {
-          const readingJson2 = await readingRes.clone().json()
-          allUserBooks.push(...(readingJson2.data || []))
-        }
-
-        if (finishedRes.ok) {
-          const finishedJson = await finishedRes.json()
-          const finishedBooks = finishedJson.data || []
-          allUserBooks.push(...finishedBooks)
-        }
-
+        const allUserBooks = [...readingBooks, ...finishedBooks]
         const ratedMatch = allUserBooks.find((ub: any) => String(ub.book.id) === bookId)
         if (ratedMatch?.rating) {
           setUserRating(ratedMatch.rating)
