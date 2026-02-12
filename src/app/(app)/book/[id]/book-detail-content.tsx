@@ -123,7 +123,10 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
   }
 
   const author = book.cached_contributors?.[0]?.author?.name || 'Unknown Author'
-  const coverUrl = book.cached_image?.url || null
+  const parsedImage = typeof book.cached_image === 'string'
+    ? (() => { try { return JSON.parse(book.cached_image) } catch { return null } })()
+    : book.cached_image
+  const coverUrl = parsedImage?.url || null
 
   const progressPercent = readingProgress?.progress
     ? Math.min(Math.round(readingProgress.progress), 100)

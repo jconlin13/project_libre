@@ -1,10 +1,15 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Library, Star, ExternalLink, ChevronRight } from 'lucide-react'
+import { toast } from 'sonner'
 import { getLibbySearchUrl, getHardcoverBookUrl } from '@/lib/hardcover'
 
 interface BookCardProps {
@@ -28,9 +33,170 @@ interface BookCardProps {
   cover?: boolean
 }
 
+function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdateProgress }: {
+  book: BookCardProps['book']
+  coverUrl: string | null
+  author: string
+  rating?: number | null
+  progressPercent: number | null
+  onUpdateProgress?: () => void
+}) {
+  const [popoverOpen, setPopoverOpen] = useState(false)
+  const [progressMode, setProgressMode] = useState<'pages' | 'percent'>('pages')
+  const [progressValue, setProgressValue] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    const val = Number(progressValue)
+    if (isNaN(val) || val < 0 || !progressValue) return
+    setSaving(true)
+    try {
+      const body: Record<string, unknown> = { bookId: book.id }
+      if (progressMode === 'pages') {
+        body.progressPages = val
+      } else {
+        body.progress = Math.min(val, 100)
+      }
+      const res = await fetch('/api/hardcover/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (res.ok) {
+        toast.success('Progress updated!')
+        setPopoverOpen(false)
+        window.location.reload()
+      } else {
+        const data = await res.json()
+        toast.error(data.error || 'Failed to update')
+      }
+    } catch {
+      toast.error('Failed to update progress')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-center w-[120px] flex-shrink-0 group">
+      {/* Cover image */}
+      <div className="relative w-[120px] h-[180px] overflow-hidden rounded-lg shadow-md transition-shadow group-hover:shadow-lg">
+        {coverUrl ? (
+          <Image src={coverUrl} alt={book.title} fill className="object-cover" sizes="120px" unoptimized />
+        ) : (
+          <div className="h-full w-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
+            No cover
+          </div>
+        )}
+        {/* Progress overlay at bottom of cover */}
+        {progressPercent !== null && (
+          <div className="absolute bottom-0 left-0 right-0">
+            <div className="h-1.5 bg-black/30">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Title (serif, italic, centered — larger than author) */}
+      <p className="mt-2 text-sm font-medium italic text-center leading-tight line-clamp-2 w-full" style={{ fontFamily: 'var(--font-lora), serif' }}>
+        {book.title}
+      </p>
+
+      {/* Author (serif, centered) */}
+      <p className="mt-0.5 text-[11px] text-muted-foreground text-center leading-tight line-clamp-1 w-full" style={{ fontFamily: 'var(--font-lora), serif' }}>
+        {author}
+      </p>
+
+      {/* Rating stars */}
+      {rating != null && rating > 0 && (
+        <div className="flex items-center gap-0.5 mt-1">
+          {[1, 2, 3, 4, 5].map(star => (
+            <Star
+              key={star}
+              className={`h-3 w-3 ${star <= rating ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30'}`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Progress text */}
+      {progressPercent !== null && (
+        <p className="text-[11px] text-muted-foreground mt-0.5">{progressPercent}%</p>
+      )}
+
+      {/* Update Progress button with popover */}
+      {onUpdateProgress && (
+        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+          <PopoverTrigger asChild>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPopoverOpen(true) }}
+              className="mt-1.5 flex items-center gap-0.5 text-[11px] text-primary border border-primary/40 rounded-md px-2 py-0.5 hover:bg-primary/5 hover:border-primary/60 transition-colors font-medium"
+            >
+              Update Progress
+              <ChevronRight className="h-3 w-3" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-56 p-3"
+            side="right"
+            align="start"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+          >
+            <div className="space-y-3">
+              <p className="text-xs font-medium line-clamp-1">{book.title}</p>
+              <div className="flex gap-1">
+                <button
+                  className={`text-[10px] px-2 py-0.5 rounded ${progressMode === 'pages' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+                  onClick={() => { setProgressMode('pages'); setProgressValue('') }}
+                >
+                  Pages
+                </button>
+                <button
+                  className={`text-[10px] px-2 py-0.5 rounded ${progressMode === 'percent' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+                  onClick={() => { setProgressMode('percent'); setProgressValue('') }}
+                >
+                  Percent
+                </button>
+              </div>
+              <div>
+                <Label className="text-[10px]">
+                  {progressMode === 'pages'
+                    ? `Page${book.pages ? ` (of ${book.pages})` : ''}`
+                    : '% complete'}
+                </Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={progressMode === 'percent' ? 100 : book.pages || 9999}
+                  placeholder={progressMode === 'pages' ? 'e.g. 150' : 'e.g. 45'}
+                  value={progressValue}
+                  onChange={e => setProgressValue(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSave()}
+                  className="h-7 text-xs mt-1"
+                />
+              </div>
+              <Button onClick={handleSave} size="sm" className="w-full h-7 text-xs" disabled={saving}>
+                {saving ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
+  )
+}
+
 export function BookCard({ book, rating, status, progress, progressPages, showActions, onRecommend, onPlusOne, onUpdateProgress, compact, cover }: BookCardProps) {
   const author = book.cached_contributors?.[0]?.author?.name || 'Unknown Author'
-  const coverUrl = book.cached_image?.url || null
+  // cached_image can be an object or a JSON string from the API
+  const parsedImage = typeof book.cached_image === 'string'
+    ? (() => { try { return JSON.parse(book.cached_image) } catch { return null } })()
+    : book.cached_image
+  const coverUrl = parsedImage?.url || null
 
   const libbyUrl = getLibbySearchUrl(book.title, author)
   const hardcoverUrl = book.slug ? getHardcoverBookUrl(book.slug) : null
@@ -44,67 +210,14 @@ export function BookCard({ book, rating, status, progress, progressPages, showAc
         : null
 
     return (
-      <div className="flex flex-col items-center w-[120px] flex-shrink-0 group">
-        {/* Cover image */}
-        <div className="relative w-[120px] h-[180px] overflow-hidden rounded-lg shadow-md transition-shadow group-hover:shadow-lg">
-          {coverUrl ? (
-            <Image src={coverUrl} alt={book.title} fill className="object-cover" sizes="120px" />
-          ) : (
-            <div className="h-full w-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
-              No cover
-            </div>
-          )}
-          {/* Progress overlay at bottom of cover */}
-          {progressPercent !== null && (
-            <div className="absolute bottom-0 left-0 right-0">
-              <div className="h-1.5 bg-black/30">
-                <div
-                  className="h-full bg-primary transition-all"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Title (italic, centered) */}
-        <p className="mt-2 text-xs font-medium italic text-center leading-tight line-clamp-2 w-full">
-          {book.title}
-        </p>
-
-        {/* Author (centered) */}
-        <p className="mt-0.5 text-[11px] text-muted-foreground text-center leading-tight line-clamp-1 w-full">
-          {author}
-        </p>
-
-        {/* Rating stars */}
-        {rating != null && rating > 0 && (
-          <div className="flex items-center gap-0.5 mt-1">
-            {[1, 2, 3, 4, 5].map(star => (
-              <Star
-                key={star}
-                className={`h-3 w-3 ${star <= rating ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30'}`}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Progress text */}
-        {progressPercent !== null && (
-          <p className="text-[11px] text-muted-foreground mt-0.5">{progressPercent}%</p>
-        )}
-
-        {/* Update Progress button */}
-        {onUpdateProgress && (
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onUpdateProgress() }}
-            className="mt-1.5 flex items-center gap-0.5 text-[11px] text-primary hover:text-primary/80 transition-colors font-medium"
-          >
-            Update Progress
-            <ChevronRight className="h-3 w-3" />
-          </button>
-        )}
-      </div>
+      <CoverCard
+        book={book}
+        coverUrl={coverUrl}
+        author={author}
+        rating={rating}
+        progressPercent={progressPercent}
+        onUpdateProgress={onUpdateProgress}
+      />
     )
   }
 
