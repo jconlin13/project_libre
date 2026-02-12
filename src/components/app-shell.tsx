@@ -121,23 +121,25 @@ export function AppShell({ children, user }: AppShellProps) {
 
           <div className="flex items-center gap-1">
             {/* Font size toggle */}
-            <div className="inline-flex items-center rounded-md border border-input bg-background">
+            <div className="inline-flex items-center rounded-md border border-input bg-background" style={{ fontSize: '16px' }}>
               <button
                 onClick={fontDecrease}
                 disabled={fontLevel <= -3}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-l-md text-sm font-medium hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                className="inline-flex items-center justify-center rounded-l-md font-medium hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                style={{ width: '32px', height: '32px' }}
                 title="Decrease text size"
               >
-                <span className="text-xs font-bold">A</span>
+                <span style={{ fontSize: '12px', fontWeight: 700 }}>A</span>
               </button>
-              <div className="w-px h-5 bg-border" />
+              <div className="bg-border" style={{ width: '1px', height: '20px' }} />
               <button
                 onClick={fontIncrease}
-                disabled={fontLevel >= 3}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-r-md text-sm font-medium hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                disabled={fontLevel >= 5}
+                className="inline-flex items-center justify-center rounded-r-md font-medium hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                style={{ width: '32px', height: '32px' }}
                 title="Increase text size"
               >
-                <span className="text-base font-bold">A</span>
+                <span style={{ fontSize: '16px', fontWeight: 700 }}>A</span>
               </button>
             </div>
 

@@ -63,7 +63,10 @@ const tabs: { id: DashboardTab; label: string; icon: React.ElementType }[] = [
 
 function CountBadge({ count }: { count: number }) {
   return (
-    <span className="inline-flex items-center justify-center h-7 min-w-7 px-2.5 rounded-full bg-primary/10 text-sm font-bold">
+    <span
+      className="inline-flex items-center justify-center rounded-full bg-primary/10 text-sm font-bold"
+      style={{ height: '28px', minWidth: '28px', padding: '0 10px' }}
+    >
       {count}
     </span>
   )

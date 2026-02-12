@@ -21,8 +21,8 @@ export function useFontSize() {
 }
 
 const MIN_LEVEL = -3
-const MAX_LEVEL = 3
-const STEP = 0.0625 // 1px at 16px base = 6.25%
+const MAX_LEVEL = 5
+const STEP = 0.1 // 10% per step — level 3 = 130%, level 5 = 150%
 const STORAGE_KEY = 'font-size-level'
 
 function applyFontSize(level: number) {
