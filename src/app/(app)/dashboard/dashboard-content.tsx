@@ -10,7 +10,7 @@ import { BookCard } from '@/components/book-card'
 import { MemberCardSkeleton } from '@/components/loading-skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Plus, Users, Copy, BookOpen, AlertCircle } from 'lucide-react'
+import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -58,6 +58,8 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
   const [memberBooks, setMemberBooks] = useState<Record<string, MemberBooks>>({})
   const [loadingMembers, setLoadingMembers] = useState<Set<string>>(new Set())
   const [activity, setActivity] = useState<any[]>([])
+  const [myBooks, setMyBooks] = useState<MemberBooks | null>(null)
+  const [loadingMyBooks, setLoadingMyBooks] = useState(false)
 
   const fetchMemberBooks = useCallback(async (memberId: string) => {
     setLoadingMembers(prev => new Set(prev).add(memberId))
@@ -92,10 +94,27 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
     }
   }, [currentUser.id])
 
+  // Fetch current user's books regardless of household status
+  useEffect(() => {
+    if (!currentUser.hardcoverConnected) return
+
+    setLoadingMyBooks(true)
+    Promise.all([
+      fetch('/api/hardcover?action=reading').then(r => r.json()),
+      fetch('/api/hardcover?action=finished&limit=5').then(r => r.json()),
+    ]).then(([readingData, finishedData]) => {
+      setMyBooks({
+        reading: readingData.data || [],
+        finished: finishedData.data || [],
+      })
+    }).catch(console.error).finally(() => setLoadingMyBooks(false))
+  }, [currentUser.hardcoverConnected])
+
   useEffect(() => {
     if (!hasHousehold) return
 
-    const allMembers = households.flatMap(h => h.members).filter(m => m.hardcoverConnected)
+    // Fetch other household members' books (skip current user, already fetched above)
+    const allMembers = households.flatMap(h => h.members).filter(m => m.hardcoverConnected && m.id !== currentUser.id)
     const uniqueMembers = [...new Map(allMembers.map(m => [m.id, m])).values()]
     uniqueMembers.forEach(m => fetchMemberBooks(m.id))
 
@@ -103,7 +122,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
       .then(r => r.json())
       .then(d => setActivity(d.data || []))
       .catch(console.error)
-  }, [hasHousehold, households, fetchMemberBooks])
+  }, [hasHousehold, households, fetchMemberBooks, currentUser.id])
 
   async function createHousehold() {
     if (!householdName.trim()) return
@@ -143,78 +162,188 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
     } catch { toast.error('Failed to join household') }
   }
 
+  // My Reading section — shown on every dashboard view
+  function renderMyReading() {
+    if (!currentUser.hardcoverConnected) {
+      return (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <AlertCircle className="h-8 w-8 text-yellow-500 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground mb-2">
+              Connect your Hardcover account to see your books here.
+            </p>
+            <Link href="/settings">
+              <Button variant="outline" size="sm">Go to Settings</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )
+    }
+
+    if (loadingMyBooks) {
+      return (
+        <Card>
+          <CardHeader><CardTitle className="text-lg">My Reading</CardTitle></CardHeader>
+          <CardContent><MemberCardSkeleton /></CardContent>
+        </Card>
+      )
+    }
+
+    if (!myBooks) return null
+
+    return (
+      <div className="space-y-6">
+        {/* Currently Reading */}
+        {myBooks.reading.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Currently Reading
+              </CardTitle>
+              <CardDescription>{myBooks.reading.length} {myBooks.reading.length === 1 ? 'book' : 'books'}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {myBooks.reading.map((ub: any) => {
+                  const read = ub.user_book_reads?.[0]
+                  return (
+                    <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
+                      <BookCard
+                        book={ub.book}
+                        progress={read?.progress}
+                        progressPages={read?.progress_pages}
+                        compact
+                      />
+                    </Link>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recently Finished */}
+        {myBooks.finished.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                Recently Finished
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {myBooks.finished.map((ub: any) => (
+                  <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
+                    <BookCard book={ub.book} rating={ub.rating} compact />
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {myBooks.reading.length === 0 && myBooks.finished.length === 0 && (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <BookMarked className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">
+                No reading activity on Hardcover yet. Start tracking a book there and it will show up here.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    )
+  }
+
   if (!hasHousehold) {
     return (
-      <div className="flex flex-col items-center justify-center py-24">
-        <Users className="h-16 w-16 text-muted-foreground mb-6" />
-        <h2 className="text-2xl font-bold mb-2">Welcome to Family Book Club</h2>
-        <p className="text-muted-foreground mb-8 text-center max-w-md">
-          Create a household to start sharing your reading life with family, or join an existing one with an invite code.
-        </p>
-        {!currentUser.hardcoverConnected && (
-          <div className="mb-6 flex items-center gap-2 rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-4 text-sm">
-            <AlertCircle className="h-4 w-4 text-yellow-500" />
-            <span>Connect your Hardcover account first in <Link href="/settings" className="underline font-medium">Settings</Link></span>
-          </div>
-        )}
-        <div className="flex gap-4">
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="lg">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Household
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create a Household</DialogTitle>
-                <DialogDescription>Give your household a name. You&apos;ll get an invite code to share.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label>Household Name</Label>
-                  <Input
-                    placeholder="The Smith Family"
-                    value={householdName}
-                    onChange={e => setHouseholdName(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && createHousehold()}
-                  />
-                </div>
-                <Button onClick={createHousehold} className="w-full">Create</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="lg">Join Household</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Join a Household</DialogTitle>
-                <DialogDescription>Enter the invite code shared by a family member.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label>Invite Code</Label>
-                  <Input
-                    placeholder="ABCD1234"
-                    value={inviteCode}
-                    onChange={e => setInviteCode(e.target.value.toUpperCase())}
-                    onKeyDown={e => e.key === 'Enter' && joinHousehold()}
-                  />
-                </div>
-                <Button onClick={joinHousehold} className="w-full">Join</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+      <div className="space-y-8">
+        {/* My Reading — always visible */}
+        <div>
+          <h2 className="text-2xl font-bold mb-4">My Reading</h2>
+          {renderMyReading()}
         </div>
+
+        {/* Household prompt — below my reading */}
+        <Card className="border-dashed">
+          <CardContent className="py-8">
+            <div className="flex flex-col items-center text-center">
+              <Users className="h-10 w-10 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-1">Start a Family Book Club</h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-md">
+                Create a household to share your reading with family, or join an existing one with an invite code.
+              </p>
+              <div className="flex gap-4">
+                <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Household
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create a Household</DialogTitle>
+                      <DialogDescription>Give your household a name. You&apos;ll get an invite code to share.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <div className="space-y-2">
+                        <Label>Household Name</Label>
+                        <Input
+                          placeholder="The Smith Family"
+                          value={householdName}
+                          onChange={e => setHouseholdName(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && createHousehold()}
+                        />
+                      </div>
+                      <Button onClick={createHousehold} className="w-full">Create</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">Join Household</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Join a Household</DialogTitle>
+                      <DialogDescription>Enter the invite code shared by a family member.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <div className="space-y-2">
+                        <Label>Invite Code</Label>
+                        <Input
+                          placeholder="ABCD1234"
+                          value={inviteCode}
+                          onChange={e => setInviteCode(e.target.value.toUpperCase())}
+                          onKeyDown={e => e.key === 'Enter' && joinHousehold()}
+                        />
+                      </div>
+                      <Button onClick={joinHousehold} className="w-full">Join</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
     <div className="space-y-8">
+      {/* My Reading — always at the top */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4">My Reading</h2>
+        {renderMyReading()}
+      </div>
+
+      {/* Household sections */}
       {households.map(household => (
         <div key={household.id}>
           <div className="flex items-center justify-between mb-4">
@@ -238,18 +367,22 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {household.members.map(member => (
+            {household.members.filter(m => m.id !== currentUser.id).map(member => (
               <Card key={member.id} className="overflow-hidden">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={member.avatarUrl || undefined} />
-                      <AvatarFallback>
-                        {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <Link href={`/person/${member.id}`}>
+                      <Avatar className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                        <AvatarImage src={member.avatarUrl || undefined} />
+                        <AvatarFallback>
+                          {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Link>
                     <div>
-                      <CardTitle className="text-base">{member.name}</CardTitle>
+                      <Link href={`/person/${member.id}`} className="hover:underline">
+                        <CardTitle className="text-base">{member.name}</CardTitle>
+                      </Link>
                       <CardDescription className="text-xs">
                         {member.hardcoverConnected ? (
                           <span className="text-green-600 dark:text-green-400">@{member.hardcoverUsername}</span>
@@ -284,13 +417,14 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
                             {memberBooks[member.id].reading.slice(0, 3).map((ub: any) => {
                               const read = ub.user_book_reads?.[0]
                               return (
-                                <BookCard
-                                  key={ub.id}
-                                  book={ub.book}
-                                  progress={read?.progress}
-                                  progressPages={read?.progress_pages}
-                                  compact
-                                />
+                                <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
+                                  <BookCard
+                                    book={ub.book}
+                                    progress={read?.progress}
+                                    progressPages={read?.progress_pages}
+                                    compact
+                                  />
+                                </Link>
                               )
                             })}
                           </div>
@@ -301,7 +435,9 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
                           <h4 className="text-xs font-medium text-muted-foreground mb-2">Recently Finished</h4>
                           <div className="space-y-1">
                             {memberBooks[member.id].finished.slice(0, 2).map((ub: any) => (
-                              <BookCard key={ub.id} book={ub.book} rating={ub.rating} compact />
+                              <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
+                                <BookCard book={ub.book} rating={ub.rating} compact />
+                              </Link>
                             ))}
                           </div>
                         </div>
