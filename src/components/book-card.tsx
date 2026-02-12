@@ -114,18 +114,14 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
               No cover
             </div>
           )}
-          {/* Progress overlay at bottom of cover with percentage label */}
+          {/* Progress overlay at bottom of cover with percentage label centered inside bar */}
           {progressPercent !== null && (
-            <div className="absolute bottom-0 left-0 right-0">
-              <div className="flex items-center justify-end px-1" style={{ backgroundColor: 'rgba(55, 55, 55, 0.7)' }}>
-                <span className="text-[9px] font-medium text-white/90 leading-none py-0.5">{progressPercent}%</span>
-              </div>
-              <div className="h-2" style={{ backgroundColor: 'rgba(55, 55, 55, 0.45)' }}>
-                <div
-                  className="h-full bg-primary transition-all"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
+            <div className="absolute bottom-0 left-0 right-0 h-4 flex items-center" style={{ backgroundColor: 'rgba(55, 55, 55, 0.45)' }}>
+              <div
+                className="absolute inset-0 h-full bg-primary transition-all"
+                style={{ width: `${progressPercent}%` }}
+              />
+              <span className="relative z-10 w-full text-center text-[9px] font-semibold text-white drop-shadow-sm">{progressPercent}%</span>
             </div>
           )}
         </div>
