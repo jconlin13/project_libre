@@ -69,18 +69,14 @@ export function StarRating({ rating, onRate, size = 'md', readOnly = false }: St
               setHoverValue(val)
             }}
           >
-            {full ? (
-              <Star className={`${sizeClass} fill-yellow-500 text-yellow-500`} />
-            ) : half ? (
-              <span className="relative inline-flex">
-                <Star className={`${sizeClass} text-muted-foreground/30`} />
+            <span className="relative inline-flex">
+              <Star className={`${sizeClass} ${full ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30'}`} />
+              {half && (
                 <span className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
                   <Star className={`${sizeClass} fill-yellow-500 text-yellow-500`} />
                 </span>
-              </span>
-            ) : (
-              <Star className={`${sizeClass} text-muted-foreground/30`} />
-            )}
+              )}
+            </span>
           </button>
         )
       })}

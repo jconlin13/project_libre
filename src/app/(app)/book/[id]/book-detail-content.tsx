@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, ExternalLink, BookOpen, CheckCircle, BookMarked, Bookmark, Ban, ChevronDown } from 'lucide-react'
+import { ArrowLeft, BookOpen, CheckCircle, BookMarked, Bookmark, Ban, ChevronDown } from 'lucide-react'
 import { AmazonIcon } from '@/components/icons/amazon-icon'
 import { LibbyIcon } from '@/components/icons/libby-icon'
+import { HardcoverIcon } from '@/components/icons/hardcover-icon'
 import { StarRating } from '@/components/star-rating'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
@@ -407,8 +408,10 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                 <div className="flex flex-col gap-2 sm:w-2/5 flex-shrink-0">
                   <a href={libbyUrl} target="_blank" rel="noopener noreferrer">
                     <Button
-                      className="w-full justify-center gap-2 text-white hover:opacity-90 transition-shadow hover:shadow-lg"
+                      className="w-full justify-center gap-2 text-white transition-shadow hover:shadow-lg"
                       style={{ backgroundColor: 'rgb(93, 33, 55)' }}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(73, 23, 42)')}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgb(93, 33, 55)')}
                     >
                       <LibbyIcon className="h-5 w-5" />
                       Search on Libby
@@ -416,16 +419,23 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                   </a>
                   {hardcoverUrl && (
                     <a href={hardcoverUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" className="w-full justify-center gap-2 transition-shadow hover:shadow-lg">
-                        <ExternalLink className="h-4 w-4" />
+                      <Button
+                        className="w-full justify-center gap-2 text-white transition-shadow hover:shadow-lg"
+                        style={{ backgroundColor: 'rgb(49, 46, 124)' }}
+                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(35, 33, 98)')}
+                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgb(49, 46, 124)')}
+                      >
+                        <HardcoverIcon className="h-5 w-5" />
                         View on Hardcover
                       </Button>
                     </a>
                   )}
                   <a href={amazonUrl} target="_blank" rel="noopener noreferrer">
                     <Button
-                      className="w-full justify-center gap-2 text-black hover:opacity-90 transition-shadow hover:shadow-lg"
+                      className="w-full justify-center gap-2 text-black transition-shadow hover:shadow-lg"
                       style={{ backgroundColor: 'rgb(244, 192, 118)' }}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(224, 170, 90)')}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgb(244, 192, 118)')}
                     >
                       <AmazonIcon className="h-5 w-5" />
                       View on Amazon
