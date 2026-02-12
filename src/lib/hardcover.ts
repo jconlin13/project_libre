@@ -130,6 +130,8 @@ export async function fetchWantToRead(token: string) {
       user_books(where: {status_id: {_eq: 1}}, order_by: {updated_at: desc}) {
         id
         status_id
+        rating
+        date_added
         book {
           ${BOOK_FIELDS}
         }
@@ -179,6 +181,28 @@ export async function updateBookRating(
   return await hardcoverQuery(token, mutation, {
     id: userBookId,
     object: { rating: rating === 0 ? null : rating },
+  })
+}
+
+export async function updateBookStatus(
+  token: string,
+  userBookId: number,
+  statusId: number
+) {
+  const mutation = `
+    mutation UpdateUserBook($id: Int!, $object: UserBookUpdateInput!) {
+      update_user_book(id: $id, object: $object) {
+        id
+        user_book {
+          id
+          status_id
+        }
+      }
+    }
+  `
+  return await hardcoverQuery(token, mutation, {
+    id: userBookId,
+    object: { status_id: statusId },
   })
 }
 

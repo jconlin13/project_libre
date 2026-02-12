@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, ExternalLink, BookOpen } from 'lucide-react'
+import { ArrowLeft, ExternalLink, BookOpen, CheckCircle, BookMarked, Bookmark, XCircle, ChevronDown } from 'lucide-react'
 import { AmazonIcon } from '@/components/icons/amazon-icon'
 import { LibbyIcon } from '@/components/icons/libby-icon'
 import { StarRating } from '@/components/star-rating'
@@ -13,16 +13,26 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface BookDetailContentProps {
   bookId: string
 }
 
+const STATUS_CONFIG: Record<number, { label: string; color: string; bgColor: string; borderColor: string; icon: React.ElementType }> = {
+  1: { label: 'Want to Read', color: 'text-yellow-700 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', borderColor: 'border-yellow-300 dark:border-yellow-700', icon: Bookmark },
+  2: { label: 'Currently Reading', color: 'text-blue-700 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', borderColor: 'border-blue-300 dark:border-blue-700', icon: BookMarked },
+  3: { label: 'Read', color: 'text-green-700 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', borderColor: 'border-green-300 dark:border-green-700', icon: CheckCircle },
+  5: { label: 'Did Not Finish', color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', borderColor: 'border-red-300 dark:border-red-700', icon: XCircle },
+}
+
 export default function BookDetailContent({ bookId }: BookDetailContentProps) {
   const [book, setBook] = useState<any>(null)
   const [readingProgress, setReadingProgress] = useState<{ progress: number | null; progress_pages: number | null } | null>(null)
   const [userRating, setUserRating] = useState<number>(0)
+  const [bookStatus, setBookStatus] = useState<number | null>(null)
+  const [statusPopoverOpen, setStatusPopoverOpen] = useState(false)
   const [bookActivity, setBookActivity] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -36,10 +46,11 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [bookRes, readingRes, finishedRes] = await Promise.all([
+        const [bookRes, readingRes, finishedRes, wantToReadRes] = await Promise.all([
           fetch(`/api/hardcover?action=book&bookId=${bookId}`),
           fetch('/api/hardcover?action=reading'),
           fetch('/api/hardcover?action=finished&limit=50'),
+          fetch('/api/hardcover?action=want-to-read'),
         ])
 
         const bookJson = await bookRes.json()
@@ -52,30 +63,38 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
 
         setBook(bookData)
 
-        // Parse reading and finished lists once
+        // Parse all lists once
         const readingBooks = readingRes.ok ? (await readingRes.json()).data || [] : []
         const finishedBooks = finishedRes.ok ? (await finishedRes.json()).data || [] : []
+        const wantToReadBooks = wantToReadRes.ok ? (await wantToReadRes.json()).data || [] : []
 
-        // Check if currently reading this book
-        const readingMatch = readingBooks.find((ub: any) => String(ub.book.id) === bookId)
-        if (readingMatch) {
-          const read = readingMatch.user_book_reads?.[0]
-          if (read) {
-            setReadingProgress({ progress: read.progress, progress_pages: read.progress_pages })
+        // Find the user_book entry across all lists
+        const allUserBooks = [...readingBooks, ...finishedBooks, ...wantToReadBooks]
+        const userBookMatch = allUserBooks.find((ub: any) => String(ub.book.id) === bookId)
+
+        if (userBookMatch) {
+          // Set status
+          if (userBookMatch.status_id) {
+            setBookStatus(userBookMatch.status_id)
           }
-        }
 
-        // Check rating from reading or finished books
-        const allUserBooks = [...readingBooks, ...finishedBooks]
-        const ratedMatch = allUserBooks.find((ub: any) => String(ub.book.id) === bookId)
-        if (ratedMatch?.rating) {
-          setUserRating(ratedMatch.rating)
-        }
+          // Set rating
+          if (userBookMatch.rating) {
+            setUserRating(userBookMatch.rating)
+          }
 
-        // Build activity timeline from user_book_reads
-        const activityItems: any[] = []
-        if (ratedMatch) {
-          const reads = ratedMatch.user_book_reads || []
+          // Set progress from reading match
+          const readingMatch = readingBooks.find((ub: any) => String(ub.book.id) === bookId)
+          if (readingMatch) {
+            const read = readingMatch.user_book_reads?.[0]
+            if (read) {
+              setReadingProgress({ progress: read.progress, progress_pages: read.progress_pages })
+            }
+          }
+
+          // Build activity timeline
+          const activityItems: any[] = []
+          const reads = userBookMatch.user_book_reads || []
           reads.forEach((read: any) => {
             if (read.progress != null && read.progress > 0) {
               activityItems.push({
@@ -92,15 +111,15 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
               })
             }
           })
-          if (ratedMatch.rating) {
+          if (userBookMatch.rating) {
             activityItems.push({
               type: 'rating',
-              value: `${ratedMatch.rating}/5 stars`,
-              date: ratedMatch.date_added || ratedMatch.last_read_date,
+              value: `${userBookMatch.rating}/5 stars`,
+              date: userBookMatch.date_added || userBookMatch.last_read_date,
             })
           }
+          setBookActivity(activityItems)
         }
-        setBookActivity(activityItems)
       } catch (error) {
         console.error('Error fetching book:', error)
         toast.error('Failed to load book details')
@@ -195,6 +214,30 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
     }
   }
 
+  async function handleStatusChange(newStatusId: number) {
+    const prevStatus = bookStatus
+    setBookStatus(newStatusId)
+    setStatusPopoverOpen(false)
+    try {
+      const res = await fetch('/api/hardcover/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookId: Number(bookId), statusId: newStatusId }),
+      })
+      if (res.ok) {
+        const config = STATUS_CONFIG[newStatusId]
+        toast.success(`Marked as "${config?.label}"`)
+      } else {
+        setBookStatus(prevStatus)
+        const data = await res.json()
+        toast.error(data.error || 'Failed to update status')
+      }
+    } catch {
+      setBookStatus(prevStatus)
+      toast.error('Failed to update status')
+    }
+  }
+
   async function handleProgressSave() {
     const val = Number(progressInput)
     if (isNaN(val) || val < 0 || !progressInput) return
@@ -213,7 +256,6 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
       })
       if (res.ok) {
         toast.success('Progress updated!')
-        // Update local state to reflect changes
         if (progressMode === 'pages') {
           setReadingProgress(prev => ({ progress: prev?.progress ?? null, progress_pages: val }))
         } else {
@@ -235,6 +277,8 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
   const libbyUrl = `https://libbyapp.com/search/${encodeURIComponent(`title:${book.title} author:${author}`)}`
   const hardcoverUrl = book.slug ? `https://hardcover.app/books/${book.slug}` : null
   const amazonUrl = `https://www.amazon.com/s?k=${encodeURIComponent(`${book.title} ${author}`)}&i=stripbooks`
+
+  const currentStatusConfig = bookStatus ? STATUS_CONFIG[bookStatus] : null
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -272,6 +316,46 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                 <h1 className="text-2xl font-bold">{book.title}</h1>
                 <p className="text-lg text-muted-foreground mt-1">by {author}</p>
               </div>
+
+              {/* Status badge with popover to change */}
+              {bookStatus && currentStatusConfig ? (
+                <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <button className="inline-flex items-center gap-1.5 cursor-pointer group">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border ${currentStatusConfig.bgColor} ${currentStatusConfig.color} ${currentStatusConfig.borderColor}`}>
+                        <currentStatusConfig.icon className="h-4 w-4" />
+                        {currentStatusConfig.label}
+                        <ChevronDown className="h-3 w-3 opacity-50 group-hover:opacity-100 transition-opacity" />
+                      </span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-52 p-1.5" align="start">
+                    <div className="space-y-0.5">
+                      {Object.entries(STATUS_CONFIG).map(([id, config]) => {
+                        const statusId = Number(id)
+                        const isActive = statusId === bookStatus
+                        const StatusIcon = config.icon
+                        return (
+                          <button
+                            key={id}
+                            onClick={() => handleStatusChange(statusId)}
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                              isActive
+                                ? `${config.bgColor} ${config.color} font-medium`
+                                : 'hover:bg-muted'
+                            }`}
+                          >
+                            <StatusIcon className={`h-4 w-4 ${isActive ? '' : 'text-muted-foreground'}`} />
+                            {config.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : bookStatus === null && !loading ? (
+                <p className="text-sm text-muted-foreground italic">Not in your library</p>
+              ) : null}
 
               {/* Rating + Action buttons — side by side */}
               <div className="flex flex-col sm:flex-row gap-4">
