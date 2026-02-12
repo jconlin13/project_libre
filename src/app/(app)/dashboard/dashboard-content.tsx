@@ -233,37 +233,37 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
     }
 
     return (
-      <div className="relative group/row">
-        {/* Left arrow */}
-        {canScrollLeft && (
+      <div className="relative flex items-start gap-2">
+        {/* Left arrow — outside carousel, centered on book covers */}
+        <div className="flex-shrink-0 flex items-center" style={{ height: '180px' }}>
           <button
             onClick={() => scrollBy('left')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center rounded-full bg-background/90 border shadow-md hover:bg-muted transition-colors"
-            style={{ width: '32px', height: '32px', marginLeft: '-4px' }}
+            className={`flex items-center justify-center rounded-full bg-background/90 border shadow-md hover:bg-muted transition-all ${canScrollLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            style={{ width: '42px', height: '42px' }}
             aria-label="Scroll left"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-6 w-6" />
           </button>
-        )}
+        </div>
 
         <div
           ref={scrollRef}
-          className="flex gap-5 overflow-x-hidden pb-4 items-stretch"
+          className="flex gap-5 overflow-x-hidden pb-4 items-stretch flex-1 min-w-0"
         >
           {children}
         </div>
 
-        {/* Right arrow */}
-        {canScrollRight && (
+        {/* Right arrow — outside carousel, centered on book covers */}
+        <div className="flex-shrink-0 flex items-center" style={{ height: '180px' }}>
           <button
             onClick={() => scrollBy('right')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center rounded-full bg-background/90 border shadow-md hover:bg-muted transition-colors"
-            style={{ width: '32px', height: '32px', marginRight: '-4px' }}
+            className={`flex items-center justify-center rounded-full bg-background/90 border shadow-md hover:bg-muted transition-all ${canScrollRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            style={{ width: '42px', height: '42px' }}
             aria-label="Scroll right"
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-6 w-6" />
           </button>
-        )}
+        </div>
       </div>
     )
   }

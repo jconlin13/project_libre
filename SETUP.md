@@ -109,10 +109,14 @@ npx prisma studio
 | `/api/households/join` | POST | Join via invite code |
 | `/api/hardcover` | GET | Proxy to Hardcover for current user |
 | `/api/hardcover/member` | GET | Proxy to Hardcover for a household member |
+| `/api/hardcover/rating` | POST | Update book rating (0-5, half-star increments) |
+| `/api/hardcover/status` | POST | Update book status (Want to Read, Reading, Read, DNF) |
+| `/api/hardcover/progress` | POST | Update reading progress (pages or percentage) |
 | `/api/settings/hardcover` | POST, DELETE | Connect/disconnect Hardcover account |
 | `/api/recommendations` | GET, POST, PATCH | Send, list, update recommendation status |
 | `/api/plus-ones` | GET, POST, DELETE | Manage +1 wishlist |
 | `/api/activity` | GET | Merged activity feed for household |
+| `/api/feedback` | POST | Submit user feedback |
 
 ---
 
@@ -136,24 +140,55 @@ src/
     login/                      — Auth page (local + Supabase modes)
     (app)/                      — Protected routes
       dashboard/                — Household overview with reading cards
+      book/[id]/                — Book detail page (status, rating, progress, activity)
+      person/[id]/              — Household member profile
       recommendations/          — Book search, send, and manage recommendations
       settings/                 — Hardcover connection management
+      about/                    — About page
+      feedback/                 — Feedback submission form
     api/                        — Server-side API endpoints
   components/
-    app-shell.tsx               — Navigation, header, user menu
-    book-card.tsx               — Book display with cover, progress, Libby link
+    app-shell.tsx               — Navigation, header (logo, nav, font size, theme), user menu
+    book-card.tsx               — Book display with cover, half-star rating, progress, Libby link
+    star-rating.tsx             — Shared half-star rating component (left/right half-click detection)
+    font-size-provider.tsx      — Global text size scaling context (localStorage persistence)
     loading-skeleton.tsx        — Loading state placeholders
-    ui/                         — shadcn/ui components (16 total)
+    ui/                         — shadcn/ui components
   lib/
     auth.ts                     — Dual-mode auth (local + Supabase)
     encryption.ts               — AES-256-GCM for token storage
-    hardcover.ts                — GraphQL client and helper functions
+    hardcover.ts                — GraphQL client, rating/status/progress mutations
     prisma.ts                   — Database client singleton
     supabase/                   — Supabase client helpers (dormant in local mode)
+public/
+  logos/logo.svg                — Celtic tree of life app logo
 prisma/
   schema.prisma                 — Database schema definition
 __tests__/                      — Unit tests
 ```
+
+---
+
+## UI Features
+
+### Book Detail Page (`/book/[id]`)
+- **Status badge** with colored popover to change status (Want to Read / Currently Reading / Read / Did Not Finish), writes back to Hardcover API
+- **Half-star ratings** (0.5 increments) with visual half-filled stars on hover and display, plus "Clear rating" to reset
+- **Progress tracker** toggleable between percentage and page count, synced with Hardcover
+- **Activity log** showing bold user name before each action (e.g., "**Jack** rated 4.5/5")
+- **External links** to Amazon, Libby, and Hardcover
+
+### Dashboard (`/dashboard`)
+- **Arrow-based carousel navigation** with `<` `>` buttons flanking each book row (no scrollbar)
+- **Vertically aligned card elements** — ratings, progress bars, and update buttons align across cards regardless of title length
+- **Tab navigation** (My Books, Activity, Recommendations, Goals, Stats)
+- **Count badges** with fixed pixel sizing (don't scale with font size)
+
+### Global
+- **Custom logo** (Celtic tree of life SVG) in header
+- **Font size scaling** (`A|A` toggle) — 10% per level, up to 150%, persisted in localStorage, with keyboard shortcuts (Cmd+/Cmd-/Cmd+0)
+- **Dark/light theme** toggle
+- **Responsive header** with mobile hamburger menu
 
 ---
 
