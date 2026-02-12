@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, ExternalLink, BookOpen, CheckCircle, BookMarked, Bookmark, XCircle, ChevronDown } from 'lucide-react'
+import { ArrowLeft, ExternalLink, BookOpen, CheckCircle, BookMarked, Bookmark, Ban, ChevronDown } from 'lucide-react'
 import { AmazonIcon } from '@/components/icons/amazon-icon'
 import { LibbyIcon } from '@/components/icons/libby-icon'
 import { StarRating } from '@/components/star-rating'
@@ -20,11 +20,17 @@ interface BookDetailContentProps {
   bookId: string
 }
 
-const STATUS_CONFIG: Record<number, { label: string; color: string; bgColor: string; borderColor: string; icon: React.ElementType }> = {
-  1: { label: 'Want to Read', color: 'text-yellow-700 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', borderColor: 'border-yellow-300 dark:border-yellow-700', icon: Bookmark },
-  2: { label: 'Currently Reading', color: 'text-blue-700 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', borderColor: 'border-blue-300 dark:border-blue-700', icon: BookMarked },
-  3: { label: 'Read', color: 'text-green-700 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', borderColor: 'border-green-300 dark:border-green-700', icon: CheckCircle },
-  5: { label: 'Did Not Finish', color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', borderColor: 'border-red-300 dark:border-red-700', icon: XCircle },
+const STATUS_CONFIG: Record<number, {
+  label: string
+  icon: React.ElementType
+  textColor: string
+  bgColor: string
+  borderColor: string
+}> = {
+  1: { label: 'Want to Read', icon: Bookmark, textColor: '#a16207', bgColor: '#fef9c3', borderColor: '#fde047' },
+  2: { label: 'Currently Reading', icon: BookMarked, textColor: '#1d4ed8', bgColor: '#dbeafe', borderColor: '#93c5fd' },
+  3: { label: 'Read', icon: CheckCircle, textColor: '#15803d', bgColor: '#dcfce7', borderColor: '#86efac' },
+  5: { label: 'Did Not Finish', icon: Ban, textColor: '#b91c1c', bgColor: '#fee2e2', borderColor: '#fca5a5' },
 }
 
 export default function BookDetailContent({ bookId }: BookDetailContentProps) {
@@ -322,7 +328,14 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                 <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
                   <PopoverTrigger asChild>
                     <button className="inline-flex items-center gap-1.5 cursor-pointer group">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border ${currentStatusConfig.bgColor} ${currentStatusConfig.color} ${currentStatusConfig.borderColor}`}>
+                      <span
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border"
+                        style={{
+                          color: currentStatusConfig.textColor,
+                          backgroundColor: currentStatusConfig.bgColor,
+                          borderColor: currentStatusConfig.borderColor,
+                        }}
+                      >
                         <currentStatusConfig.icon className="h-4 w-4" />
                         {currentStatusConfig.label}
                         <ChevronDown className="h-3 w-3 opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -339,13 +352,17 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                           <button
                             key={id}
                             onClick={() => handleStatusChange(statusId)}
-                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
-                              isActive
-                                ? `${config.bgColor} ${config.color} font-medium`
-                                : 'hover:bg-muted'
-                            }`}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:bg-muted"
+                            style={isActive ? {
+                              color: config.textColor,
+                              backgroundColor: config.bgColor,
+                              fontWeight: 500,
+                            } : undefined}
                           >
-                            <StatusIcon className={`h-4 w-4 ${isActive ? '' : 'text-muted-foreground'}`} />
+                            <StatusIcon
+                              className="h-4 w-4"
+                              style={isActive ? { color: config.textColor } : { color: 'var(--muted-foreground)' }}
+                            />
                             {config.label}
                           </button>
                         )
