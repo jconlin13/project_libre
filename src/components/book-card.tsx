@@ -114,10 +114,13 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
               No cover
             </div>
           )}
-          {/* Progress overlay at bottom of cover */}
+          {/* Progress overlay at bottom of cover with percentage label */}
           {progressPercent !== null && (
             <div className="absolute bottom-0 left-0 right-0">
-              <div className="h-1.5 bg-black/30">
+              <div className="flex items-center justify-end px-1" style={{ backgroundColor: 'rgba(55, 55, 55, 0.7)' }}>
+                <span className="text-[9px] font-medium text-white/90 leading-none py-0.5">{progressPercent}%</span>
+              </div>
+              <div className="h-2" style={{ backgroundColor: 'rgba(55, 55, 55, 0.45)' }}>
                 <div
                   className="h-full bg-primary transition-all"
                   style={{ width: `${progressPercent}%` }}
@@ -145,11 +148,6 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
         <div onClick={(e) => { e.preventDefault(); e.stopPropagation() }}>
           <StarRating rating={currentRating} onRate={handleRating} size="sm" />
         </div>
-
-        {/* Progress text — always takes space */}
-        <p className={`text-[11px] mt-0.5 ${progressPercent !== null ? 'text-muted-foreground' : 'invisible'}`}>
-          {progressPercent !== null ? `${progressPercent}%` : '\u00A0'}
-        </p>
 
         {/* Update Progress button — always takes space */}
         {onUpdateProgress ? (
