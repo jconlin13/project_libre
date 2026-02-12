@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { BookOpen, Home, Heart, Settings, LogOut, Menu, Moon, Sun, Link2, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
+import { useFontSize } from '@/components/font-size-provider'
 import { useState } from 'react'
 
 const isLocalAuth = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === ''
@@ -39,6 +40,7 @@ export function AppShell({ children, user }: AppShellProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { theme, setTheme } = useTheme()
+  const { level: fontLevel, increase: fontIncrease, decrease: fontDecrease } = useFontSize()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   async function handleSignOut() {
@@ -117,7 +119,28 @@ export function AppShell({ children, user }: AppShellProps) {
             </nav>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* Font size toggle */}
+            <div className="inline-flex items-center rounded-md border border-input bg-background">
+              <button
+                onClick={fontDecrease}
+                disabled={fontLevel <= -3}
+                className="inline-flex items-center justify-center h-8 w-8 rounded-l-md text-sm font-medium hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                title="Decrease text size"
+              >
+                <span className="text-xs font-bold">A</span>
+              </button>
+              <div className="w-px h-5 bg-border" />
+              <button
+                onClick={fontIncrease}
+                disabled={fontLevel >= 3}
+                className="inline-flex items-center justify-center h-8 w-8 rounded-r-md text-sm font-medium hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                title="Increase text size"
+              >
+                <span className="text-base font-bold">A</span>
+              </button>
+            </div>
+
             <Button
               variant="ghost"
               size="icon"

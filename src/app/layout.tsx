@@ -5,6 +5,7 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
 const lora = Lora({ variable: '--font-lora', subsets: ['latin'] })
 import { ThemeProvider } from '@/components/theme-provider'
+import { FontSizeProvider } from '@/components/font-size-provider'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
@@ -43,7 +44,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <FontSizeProvider>
+            {children}
+          </FontSizeProvider>
           <Toaster richColors position="bottom-right" />
         </ThemeProvider>
       </body>
