@@ -70,16 +70,16 @@ export function StarRating({ rating, onRate, size = 'md', readOnly = false }: St
             }}
           >
             {full ? (
-              <Star className={`${sizeClass} transition-colors fill-yellow-500 text-yellow-500`} />
+              <Star className={`${sizeClass} fill-yellow-500 text-yellow-500`} />
             ) : half ? (
-              <span className="relative inline-block">
+              <span className="relative inline-flex">
                 <Star className={`${sizeClass} text-muted-foreground/30`} />
                 <span className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
                   <Star className={`${sizeClass} fill-yellow-500 text-yellow-500`} />
                 </span>
               </span>
             ) : (
-              <Star className={`${sizeClass} transition-colors ${!readOnly ? 'text-muted-foreground/30 hover:text-yellow-300' : 'text-muted-foreground/30'}`} />
+              <Star className={`${sizeClass} text-muted-foreground/30`} />
             )}
           </button>
         )

@@ -285,7 +285,7 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                 <div className="flex flex-col gap-2 sm:w-2/5 flex-shrink-0">
                   <a href={libbyUrl} target="_blank" rel="noopener noreferrer">
                     <Button
-                      className="w-full justify-start gap-2 text-white hover:opacity-90"
+                      className="w-full justify-center gap-2 text-white hover:opacity-90 transition-shadow hover:shadow-lg"
                       style={{ backgroundColor: 'rgb(93, 33, 55)' }}
                     >
                       <LibbyIcon className="h-5 w-5" />
@@ -294,7 +294,7 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                   </a>
                   {hardcoverUrl && (
                     <a href={hardcoverUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" className="w-full justify-start gap-2">
+                      <Button variant="outline" className="w-full justify-center gap-2 transition-shadow hover:shadow-lg">
                         <ExternalLink className="h-4 w-4" />
                         View on Hardcover
                       </Button>
@@ -302,7 +302,7 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                   )}
                   <a href={amazonUrl} target="_blank" rel="noopener noreferrer">
                     <Button
-                      className="w-full justify-start gap-2 text-black hover:opacity-90"
+                      className="w-full justify-center gap-2 text-black hover:opacity-90 transition-shadow hover:shadow-lg"
                       style={{ backgroundColor: 'rgb(244, 192, 118)' }}
                     >
                       <AmazonIcon className="h-5 w-5" />
@@ -313,7 +313,7 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
               </div>
 
               {/* Your Progress — editable, toggleable between % and pages */}
-              <div className="space-y-2">
+              <div className="space-y-2 sm:max-w-[60%]">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium flex items-center gap-1">
                     <BookOpen className="h-4 w-4" />
@@ -350,15 +350,17 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                         : `0${book.pages ? ` of ${book.pages}` : ''} pages`}
                     </span>
                   )}
-                  <button
+                  <Button
+                    size="sm"
+                    variant={editingProgress ? 'outline' : 'default'}
                     onClick={() => {
                       setEditingProgress(!editingProgress)
                       setProgressInput('')
                     }}
-                    className="text-primary hover:underline text-xs font-medium"
+                    className="h-6 text-[11px] px-3"
                   >
                     {editingProgress ? 'Cancel' : 'Update'}
-                  </button>
+                  </Button>
                 </div>
                 {editingProgress && (
                   <div className="flex items-end gap-2 pt-1">
