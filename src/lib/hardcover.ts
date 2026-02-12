@@ -160,6 +160,28 @@ export async function searchBooks(token: string, searchQuery: string) {
   return data?.books || []
 }
 
+export async function updateBookRating(
+  token: string,
+  userBookId: number,
+  rating: number
+) {
+  const mutation = `
+    mutation UpdateUserBook($id: Int!, $object: UserBookUpdateInput!) {
+      update_user_book(id: $id, object: $object) {
+        id
+        user_book {
+          id
+          rating
+        }
+      }
+    }
+  `
+  return await hardcoverQuery(token, mutation, {
+    id: userBookId,
+    object: { rating },
+  })
+}
+
 export async function updateReadingProgress(
   token: string,
   userBookId: number,

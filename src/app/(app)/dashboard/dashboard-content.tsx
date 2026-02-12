@@ -10,7 +10,7 @@ import { BookCard } from '@/components/book-card'
 import { MemberCardSkeleton } from '@/components/loading-skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, CheckCircle, Heart } from 'lucide-react'
+import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, CheckCircle, Heart, Activity, Star, BarChart3, Target } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -51,6 +51,24 @@ interface MemberBooks {
   wantToRead: Array<{ id: number; book: any }>
 }
 
+type DashboardTab = 'books' | 'activity' | 'recommendations' | 'goals' | 'stats'
+
+const tabs: { id: DashboardTab; label: string; icon: React.ElementType }[] = [
+  { id: 'books', label: 'My Books', icon: BookOpen },
+  { id: 'activity', label: 'Activity', icon: Activity },
+  { id: 'recommendations', label: 'Recommendations', icon: Heart },
+  { id: 'goals', label: 'Goals', icon: Target },
+  { id: 'stats', label: 'Stats', icon: BarChart3 },
+]
+
+function CountBadge({ count }: { count: number }) {
+  return (
+    <span className="inline-flex items-center justify-center h-6 min-w-6 px-1.5 rounded-full bg-primary/10 text-sm font-bold">
+      {count}
+    </span>
+  )
+}
+
 export function DashboardContent({ currentUser, households, hasHousehold }: DashboardContentProps) {
   const [householdName, setHouseholdName] = useState('')
   const [inviteCode, setInviteCode] = useState('')
@@ -61,6 +79,15 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
   const [activity, setActivity] = useState<any[]>([])
   const [myBooks, setMyBooks] = useState<MemberBooks | null>(null)
   const [loadingMyBooks, setLoadingMyBooks] = useState(false)
+  const [activeTab, setActiveTab] = useState<DashboardTab>('books')
+
+  const firstName = currentUser.name.split(' ')[0]
+  const initials = currentUser.name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 
   const fetchMemberBooks = useCallback(async (memberId: string) => {
     setLoadingMembers(prev => new Set(prev).add(memberId))
@@ -179,8 +206,56 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
     )
   }
 
-  // My Reading section — shown on every dashboard view
-  function renderMyReading() {
+  // Dashboard top bar: Avatar + Name + Tab navigation
+  function renderTopBar() {
+    return (
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          {/* Avatar + Name */}
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={currentUser.avatarUrl || undefined} />
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+            <h1 className="text-2xl font-bold">{firstName}</h1>
+          </div>
+
+          {/* Tab Navigation */}
+          <nav className="flex items-center gap-1 sm:ml-auto overflow-x-auto">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                <tab.icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
+    )
+  }
+
+  // Placeholder for tabs that aren't built yet
+  function renderComingSoon(tabName: string) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <p className="text-lg font-medium mb-1">{tabName}</p>
+          <p className="text-sm text-muted-foreground">Coming soon — this section is under development.</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // My Books tab content
+  function renderMyBooks() {
     if (!currentUser.hardcoverConnected) {
       return (
         <Card>
@@ -200,7 +275,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
     if (loadingMyBooks) {
       return (
         <Card>
-          <CardHeader><CardTitle className="text-lg">My Reading</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg">My Books</CardTitle></CardHeader>
           <CardContent><MemberCardSkeleton /></CardContent>
         </Card>
       )
@@ -216,7 +291,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
             <div className="flex items-center gap-2 mb-4">
               <BookOpen className="h-5 w-5" />
               <h3 className="text-lg font-semibold">Currently Reading</h3>
-              <span className="text-sm text-muted-foreground">({myBooks.reading.length})</span>
+              <CountBadge count={myBooks.reading.length} />
             </div>
             <BookRow>
               {myBooks.reading.map((ub: any) => {
@@ -243,7 +318,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
             <div className="flex items-center gap-2 mb-4">
               <CheckCircle className="h-5 w-5" />
               <h3 className="text-lg font-semibold">Recently Finished</h3>
-              <span className="text-sm text-muted-foreground">({myBooks.finished.length})</span>
+              <CountBadge count={myBooks.finished.length} />
             </div>
             <BookRow>
               {myBooks.finished.map((ub: any) => (
@@ -261,7 +336,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
             <div className="flex items-center gap-2 mb-4">
               <Heart className="h-5 w-5" />
               <h3 className="text-lg font-semibold">Want to Read</h3>
-              <span className="text-sm text-muted-foreground">({myBooks.wantToRead.length})</span>
+              <CountBadge count={myBooks.wantToRead.length} />
             </div>
             <BookRow>
               {myBooks.wantToRead.map((ub: any) => (
@@ -283,21 +358,33 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
             </CardContent>
           </Card>
         )}
-
       </div>
     )
+  }
+
+  // Render the active tab content
+  function renderTabContent() {
+    switch (activeTab) {
+      case 'books':
+        return renderMyBooks()
+      case 'activity':
+        return renderComingSoon('Activity')
+      case 'recommendations':
+        return renderComingSoon('Recommendations')
+      case 'goals':
+        return renderComingSoon('Goals')
+      case 'stats':
+        return renderComingSoon('Stats')
+    }
   }
 
   if (!hasHousehold) {
     return (
       <div className="space-y-8">
-        {/* My Reading — always visible */}
-        <div>
-          <h2 className="text-2xl font-bold mb-4">My Reading</h2>
-          {renderMyReading()}
-        </div>
+        {renderTopBar()}
+        {renderTabContent()}
 
-        {/* Household prompt — below my reading */}
+        {/* Household prompt — below content */}
         <Card className="border-dashed">
           <CardContent className="py-8">
             <div className="flex flex-col items-center text-center">
@@ -367,11 +454,8 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
 
   return (
     <div className="space-y-8">
-      {/* My Reading — always at the top */}
-      <div>
-        <h2 className="text-2xl font-bold mb-4">My Reading</h2>
-        {renderMyReading()}
-      </div>
+      {renderTopBar()}
+      {renderTabContent()}
 
       {/* Household sections */}
       {households.map(household => (

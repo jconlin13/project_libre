@@ -13,7 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { BookOpen, Home, Heart, Settings, LogOut, Menu, Moon, Sun } from 'lucide-react'
+import { BookOpen, Home, Heart, Settings, LogOut, Menu, Moon, Sun, Link2, MessageSquare } from 'lucide-react'
+import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
 import { useState } from 'react'
 
@@ -161,6 +162,31 @@ export function AppShell({ children, user }: AppShellProps) {
       <main className="container mx-auto px-4 py-6">
         {children}
       </main>
+
+      <footer className="border-t mt-8">
+        <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
+          <span>Family Book Club</span>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.origin)
+                toast.success('Referral link copied!')
+              }}
+              className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+            >
+              <Link2 className="h-3.5 w-3.5" />
+              Copy referral link
+            </button>
+            <Link href="/about" className="hover:text-foreground transition-colors">
+              About
+            </Link>
+            <Link href="/feedback" target="_blank" className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+              <MessageSquare className="h-3.5 w-3.5" />
+              Submit Feedback
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

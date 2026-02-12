@@ -45,6 +45,30 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
   const [progressMode, setProgressMode] = useState<'pages' | 'percent'>('pages')
   const [progressValue, setProgressValue] = useState('')
   const [saving, setSaving] = useState(false)
+  const [hoverStar, setHoverStar] = useState(0)
+  const [currentRating, setCurrentRating] = useState(rating ?? 0)
+
+  async function handleRating(newRating: number) {
+    const prevRating = currentRating
+    setCurrentRating(newRating)
+    try {
+      const res = await fetch('/api/hardcover/rating', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookId: book.id, rating: newRating }),
+      })
+      if (res.ok) {
+        toast.success(`Rated ${newRating}/5`)
+      } else {
+        setCurrentRating(prevRating)
+        const data = await res.json()
+        toast.error(data.error || 'Failed to update rating')
+      }
+    } catch {
+      setCurrentRating(prevRating)
+      toast.error('Failed to update rating')
+    }
+  }
 
   async function handleSave() {
     const val = Number(progressValue)
@@ -111,17 +135,27 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
         {author}
       </p>
 
-      {/* Rating stars */}
-      {rating != null && rating > 0 && (
-        <div className="flex items-center gap-0.5 mt-1">
-          {[1, 2, 3, 4, 5].map(star => (
-            <Star
+      {/* Rating stars — always visible, clickable */}
+      <div
+        className="flex items-center gap-0.5 mt-1"
+        onMouseLeave={() => setHoverStar(0)}
+      >
+        {[1, 2, 3, 4, 5].map(star => {
+          const active = hoverStar > 0 ? star <= hoverStar : star <= currentRating
+          return (
+            <button
               key={star}
-              className={`h-3 w-3 ${star <= rating ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30'}`}
-            />
-          ))}
-        </div>
-      )}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRating(star) }}
+              onMouseEnter={() => setHoverStar(star)}
+              className="p-0 cursor-pointer"
+            >
+              <Star
+                className={`h-3 w-3 transition-colors ${active ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30 hover:text-yellow-300'}`}
+              />
+            </button>
+          )
+        })}
+      </div>
 
       {/* Progress text */}
       {progressPercent !== null && (
