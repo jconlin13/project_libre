@@ -123,9 +123,7 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
   }
 
   const author = book.cached_contributors?.[0]?.author?.name || 'Unknown Author'
-  const coverUrl = book.cached_image ||
-    (book.isbn_13 ? `https://covers.openlibrary.org/b/isbn/${book.isbn_13}-L.jpg` : null) ||
-    (book.isbn_10 ? `https://covers.openlibrary.org/b/isbn/${book.isbn_10}-L.jpg` : null)
+  const coverUrl = book.cached_image?.url || null
 
   const progressPercent = readingProgress?.progress
     ? Math.min(Math.round(readingProgress.progress), 100)
@@ -214,7 +212,6 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
               {/* Metadata */}
               <div className="flex flex-wrap gap-2">
                 {book.pages && <Badge variant="secondary">{book.pages} pages</Badge>}
-                {book.isbn_13 && <Badge variant="secondary">ISBN: {book.isbn_13}</Badge>}
                 {book.release_date && (
                   <Badge variant="secondary">
                     Released: {new Date(book.release_date).toLocaleDateString()}

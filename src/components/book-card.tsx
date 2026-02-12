@@ -12,10 +12,8 @@ interface BookCardProps {
     id: number
     title: string
     slug?: string
-    cached_image?: string
+    cached_image?: { url: string } | null
     cached_contributors?: { author: { name: string } }[]
-    isbn_13?: string
-    isbn_10?: string
     pages?: number
   }
   rating?: number | null
@@ -30,9 +28,7 @@ interface BookCardProps {
 
 export function BookCard({ book, rating, status, progress, progressPages, showActions, onRecommend, onPlusOne, compact }: BookCardProps) {
   const author = book.cached_contributors?.[0]?.author?.name || 'Unknown Author'
-  const coverUrl = book.cached_image ||
-    (book.isbn_13 ? `https://covers.openlibrary.org/b/isbn/${book.isbn_13}-L.jpg` : null) ||
-    (book.isbn_10 ? `https://covers.openlibrary.org/b/isbn/${book.isbn_10}-L.jpg` : null)
+  const coverUrl = book.cached_image?.url || null
 
   const libbyUrl = getLibbySearchUrl(book.title, author)
   const hardcoverUrl = book.slug ? getHardcoverBookUrl(book.slug) : null

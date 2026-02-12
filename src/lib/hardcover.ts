@@ -4,16 +4,11 @@ export interface HardcoverBook {
   id: number
   title: string
   slug: string
-  image?: {
-    url: string
-  }
-  cached_image?: string
+  cached_image?: { url: string } | null
   description?: string
   release_date?: string
   cached_contributors?: { author: { name: string; slug: string } }[]
   pages?: number
-  isbn_13?: string
-  isbn_10?: string
 }
 
 export interface UserBookRead {
@@ -28,11 +23,21 @@ export interface UserBook {
   rating: number | null
   review?: string
   date_added?: string
-  started_at?: string
-  finished_at?: string
   book: HardcoverBook
   user_book_reads?: UserBookRead[]
 }
+
+// Shared book fields fragment used across all queries
+const BOOK_FIELDS = `
+  id
+  title
+  slug
+  cached_image
+  description
+  cached_contributors
+  pages
+  release_date
+`
 
 async function hardcoverQuery(token: string, query: string, variables?: Record<string, unknown>) {
   const res = await fetch(HARDCOVER_API_URL, {
@@ -79,17 +84,9 @@ export async function fetchCurrentlyReading(token: string) {
         id
         status_id
         rating
-        started_at
+        date_added
         book {
-          id
-          title
-          slug
-          cached_image
-          description
-          cached_contributors
-          pages
-          isbn_13
-          isbn_10
+          ${BOOK_FIELDS}
         }
         user_book_reads(order_by: {started_at: desc_nulls_last}, limit: 1) {
           progress
@@ -108,25 +105,16 @@ export async function fetchFinishedBooks(token: string, limit = 20) {
     me {
       user_books(
         where: {status_id: {_eq: 3}},
-        order_by: {finished_at: desc_nulls_last},
+        order_by: {last_read_date: desc_nulls_last},
         limit: ${limit}
       ) {
         id
         status_id
         rating
         review
-        started_at
-        finished_at
+        last_read_date
         book {
-          id
-          title
-          slug
-          cached_image
-          description
-          cached_contributors
-          pages
-          isbn_13
-          isbn_10
+          ${BOOK_FIELDS}
         }
       }
     }
@@ -142,15 +130,7 @@ export async function fetchWantToRead(token: string) {
         id
         status_id
         book {
-          id
-          title
-          slug
-          cached_image
-          description
-          cached_contributors
-          pages
-          isbn_13
-          isbn_10
+          ${BOOK_FIELDS}
         }
       }
     }
@@ -162,16 +142,7 @@ export async function fetchWantToRead(token: string) {
 export async function fetchBookById(token: string, bookId: number) {
   const query = `{
     books(where: {id: {_eq: ${bookId}}}) {
-      id
-      title
-      slug
-      cached_image
-      description
-      release_date
-      cached_contributors
-      pages
-      isbn_13
-      isbn_10
+      ${BOOK_FIELDS}
     }
   }`
   const data = await hardcoverQuery(token, query)
@@ -181,15 +152,7 @@ export async function fetchBookById(token: string, bookId: number) {
 export async function searchBooks(token: string, searchQuery: string) {
   const query = `{
     books(where: {title: {_ilike: "%${searchQuery.replace(/"/g, '\\"')}%"}}, limit: 10) {
-      id
-      title
-      slug
-      cached_image
-      description
-      cached_contributors
-      pages
-      isbn_13
-      isbn_10
+      ${BOOK_FIELDS}
     }
   }`
   const data = await hardcoverQuery(token, query)
@@ -197,10 +160,7 @@ export async function searchBooks(token: string, searchQuery: string) {
 }
 
 export function getBookCoverUrl(book: HardcoverBook): string {
-  if (book.cached_image) return book.cached_image
-  if (book.image?.url) return book.image.url
-  if (book.isbn_13) return `https://covers.openlibrary.org/b/isbn/${book.isbn_13}-L.jpg`
-  if (book.isbn_10) return `https://covers.openlibrary.org/b/isbn/${book.isbn_10}-L.jpg`
+  if (book.cached_image?.url) return book.cached_image.url
   return '/book-placeholder.svg'
 }
 
