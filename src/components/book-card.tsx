@@ -102,107 +102,113 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
   }
 
   return (
-    <div className="flex flex-col items-center w-[120px] flex-shrink-0 group">
-      {/* Cover image */}
-      <div className="relative w-[120px] h-[180px] overflow-hidden rounded-lg shadow-md transition-shadow group-hover:shadow-lg">
-        {coverUrl ? (
-          <Image src={coverUrl} alt={book.title} fill className="object-cover" sizes="120px" unoptimized />
-        ) : (
-          <div className="h-full w-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
-            No cover
-          </div>
-        )}
-        {/* Progress overlay at bottom of cover */}
-        {progressPercent !== null && (
-          <div className="absolute bottom-0 left-0 right-0">
-            <div className="h-1.5 bg-black/30">
-              <div
-                className="h-full bg-primary transition-all"
-                style={{ width: `${progressPercent}%` }}
-              />
+    <div className="flex flex-col items-center w-[120px] flex-shrink-0 group h-full">
+      {/* Top zone: cover + title + author — grows to fill space for alignment */}
+      <div className="flex flex-col items-center w-full flex-1">
+        {/* Cover image */}
+        <div className="relative w-[120px] h-[180px] overflow-hidden rounded-lg shadow-md transition-shadow group-hover:shadow-lg flex-shrink-0">
+          {coverUrl ? (
+            <Image src={coverUrl} alt={book.title} fill className="object-cover" sizes="120px" unoptimized />
+          ) : (
+            <div className="h-full w-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
+              No cover
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Title (serif, italic, centered — larger than author) */}
-      <p className="mt-2 text-sm font-medium italic text-center leading-tight line-clamp-2 w-full" style={{ fontFamily: 'var(--font-lora), serif' }}>
-        {book.title}
-      </p>
-
-      {/* Author (serif, centered) */}
-      <p className="mt-0.5 text-[11px] text-muted-foreground text-center leading-tight line-clamp-1 w-full" style={{ fontFamily: 'var(--font-lora), serif' }}>
-        {author}
-      </p>
-
-      {/* Rating stars — half-star support, clickable */}
-      <div className="mt-1" onClick={(e) => { e.preventDefault(); e.stopPropagation() }}>
-        <StarRating rating={currentRating} onRate={handleRating} size="sm" />
-      </div>
-
-      {/* Progress text */}
-      {progressPercent !== null && (
-        <p className="text-[11px] text-muted-foreground mt-0.5">{progressPercent}%</p>
-      )}
-
-      {/* Update Progress button with popover */}
-      {onUpdateProgress && (
-        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-          <PopoverTrigger asChild>
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPopoverOpen(true) }}
-              className="mt-1.5 flex items-center gap-0.5 text-[11px] text-primary border border-primary/40 rounded-md px-2 py-0.5 hover:bg-primary/5 hover:border-primary/60 transition-colors font-medium"
-            >
-              Update Progress
-              <ChevronRight className="h-3 w-3" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            className="w-56 p-3"
-            side="right"
-            align="start"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
-          >
-            <div className="space-y-3">
-              <p className="text-xs font-medium line-clamp-1">{book.title}</p>
-              <div className="flex gap-1">
-                <button
-                  className={`text-[10px] px-2 py-0.5 rounded ${progressMode === 'pages' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
-                  onClick={() => { setProgressMode('pages'); setProgressValue('') }}
-                >
-                  Pages
-                </button>
-                <button
-                  className={`text-[10px] px-2 py-0.5 rounded ${progressMode === 'percent' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
-                  onClick={() => { setProgressMode('percent'); setProgressValue('') }}
-                >
-                  Percent
-                </button>
-              </div>
-              <div>
-                <Label className="text-[10px]">
-                  {progressMode === 'pages'
-                    ? `Page${book.pages ? ` (of ${book.pages})` : ''}`
-                    : '% complete'}
-                </Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={progressMode === 'percent' ? 100 : book.pages || 9999}
-                  placeholder={progressMode === 'pages' ? 'e.g. 150' : 'e.g. 45'}
-                  value={progressValue}
-                  onChange={e => setProgressValue(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSave()}
-                  className="h-7 text-xs mt-1"
+          )}
+          {/* Progress overlay at bottom of cover */}
+          {progressPercent !== null && (
+            <div className="absolute bottom-0 left-0 right-0">
+              <div className="h-1.5 bg-black/30">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${progressPercent}%` }}
                 />
               </div>
-              <Button onClick={handleSave} size="sm" className="w-full h-7 text-xs" disabled={saving}>
-                {saving ? 'Saving...' : 'Save'}
-              </Button>
             </div>
-          </PopoverContent>
-        </Popover>
-      )}
+          )}
+        </div>
+
+        {/* Title (serif, italic, centered — larger than author) */}
+        <p className="mt-2 text-sm font-medium italic text-center leading-tight line-clamp-2 w-full" style={{ fontFamily: 'var(--font-lora), serif' }}>
+          {book.title}
+        </p>
+
+        {/* Author (serif, centered) */}
+        <p className="mt-0.5 text-[11px] text-muted-foreground text-center leading-tight line-clamp-1 w-full" style={{ fontFamily: 'var(--font-lora), serif' }}>
+          {author}
+        </p>
+      </div>
+
+      {/* Bottom zone: rating, progress, update button — aligned across cards */}
+      <div className="flex flex-col items-center w-full mt-auto pt-1">
+        {/* Rating stars — half-star support, clickable */}
+        <div onClick={(e) => { e.preventDefault(); e.stopPropagation() }}>
+          <StarRating rating={currentRating} onRate={handleRating} size="sm" />
+        </div>
+
+        {/* Progress text */}
+        {progressPercent !== null && (
+          <p className="text-[11px] text-muted-foreground mt-0.5">{progressPercent}%</p>
+        )}
+
+        {/* Update Progress button with popover */}
+        {onUpdateProgress && (
+          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+            <PopoverTrigger asChild>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPopoverOpen(true) }}
+                className="mt-1.5 flex items-center gap-0.5 text-[11px] text-primary border border-primary/40 rounded-md px-2 py-0.5 hover:bg-primary/5 hover:border-primary/60 transition-colors font-medium"
+              >
+                Update Progress
+                <ChevronRight className="h-3 w-3" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-56 p-3"
+              side="right"
+              align="start"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+            >
+              <div className="space-y-3">
+                <p className="text-xs font-medium line-clamp-1">{book.title}</p>
+                <div className="flex gap-1">
+                  <button
+                    className={`text-[10px] px-2 py-0.5 rounded ${progressMode === 'pages' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+                    onClick={() => { setProgressMode('pages'); setProgressValue('') }}
+                  >
+                    Pages
+                  </button>
+                  <button
+                    className={`text-[10px] px-2 py-0.5 rounded ${progressMode === 'percent' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+                    onClick={() => { setProgressMode('percent'); setProgressValue('') }}
+                  >
+                    Percent
+                  </button>
+                </div>
+                <div>
+                  <Label className="text-[10px]">
+                    {progressMode === 'pages'
+                      ? `Page${book.pages ? ` (of ${book.pages})` : ''}`
+                      : '% complete'}
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={progressMode === 'percent' ? 100 : book.pages || 9999}
+                    placeholder={progressMode === 'pages' ? 'e.g. 150' : 'e.g. 45'}
+                    value={progressValue}
+                    onChange={e => setProgressValue(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSave()}
+                    className="h-7 text-xs mt-1"
+                  />
+                </div>
+                <Button onClick={handleSave} size="sm" className="w-full h-7 text-xs" disabled={saving}>
+                  {saving ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
     </div>
   )
 }

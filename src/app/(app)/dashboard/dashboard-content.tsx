@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +10,7 @@ import { BookCard } from '@/components/book-card'
 import { MemberCardSkeleton } from '@/components/loading-skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, CheckCircle, Heart, Activity, Star, BarChart3, Target } from 'lucide-react'
+import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, CheckCircle, Heart, Activity, Star, BarChart3, Target, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -198,13 +198,72 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
     } catch { toast.error('Failed to join household') }
   }
 
-  // Horizontal scrollable row of book covers
+  // Horizontal row of book covers with < > arrow navigation
   function BookRow({ children }: { children: React.ReactNode }) {
+    const scrollRef = useRef<HTMLDivElement>(null)
+    const [canScrollLeft, setCanScrollLeft] = useState(false)
+    const [canScrollRight, setCanScrollRight] = useState(false)
+
+    const CARD_WIDTH = 140 // 120px card + 20px gap
+
+    const checkScroll = useCallback(() => {
+      const el = scrollRef.current
+      if (!el) return
+      setCanScrollLeft(el.scrollLeft > 0)
+      setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2)
+    }, [])
+
+    useEffect(() => {
+      const el = scrollRef.current
+      if (!el) return
+      checkScroll()
+      el.addEventListener('scroll', checkScroll, { passive: true })
+      const ro = new ResizeObserver(checkScroll)
+      ro.observe(el)
+      return () => {
+        el.removeEventListener('scroll', checkScroll)
+        ro.disconnect()
+      }
+    }, [checkScroll, children])
+
+    function scrollBy(dir: 'left' | 'right') {
+      const el = scrollRef.current
+      if (!el) return
+      el.scrollBy({ left: dir === 'right' ? CARD_WIDTH : -CARD_WIDTH, behavior: 'smooth' })
+    }
+
     return (
-      <div className="relative">
-        <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+      <div className="relative group/row">
+        {/* Left arrow */}
+        {canScrollLeft && (
+          <button
+            onClick={() => scrollBy('left')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center rounded-full bg-background/90 border shadow-md hover:bg-muted transition-colors"
+            style={{ width: '32px', height: '32px', marginLeft: '-4px' }}
+            aria-label="Scroll left"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+        )}
+
+        <div
+          ref={scrollRef}
+          className="flex gap-5 overflow-x-hidden pb-4 items-stretch"
+        >
           {children}
         </div>
+
+        {/* Right arrow */}
+        {canScrollRight && (
+          <button
+            onClick={() => scrollBy('right')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center rounded-full bg-background/90 border shadow-md hover:bg-muted transition-colors"
+            style={{ width: '32px', height: '32px', marginRight: '-4px' }}
+            aria-label="Scroll right"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        )}
       </div>
     )
   }
@@ -300,7 +359,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
               {myBooks.reading.map((ub: any) => {
                 const read = ub.user_book_reads?.[0]
                 return (
-                  <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
+                  <Link key={ub.id} href={`/book/${ub.book.id}`} className="block h-full">
                     <BookCard
                       book={ub.book}
                       progress={read?.progress}
@@ -325,7 +384,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
             </div>
             <BookRow>
               {myBooks.finished.map((ub: any) => (
-                <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
+                <Link key={ub.id} href={`/book/${ub.book.id}`} className="block h-full">
                   <BookCard book={ub.book} rating={ub.rating} cover />
                 </Link>
               ))}
@@ -343,7 +402,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
             </div>
             <BookRow>
               {myBooks.wantToRead.map((ub: any) => (
-                <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
+                <Link key={ub.id} href={`/book/${ub.book.id}`} className="block h-full">
                   <BookCard book={ub.book} cover />
                 </Link>
               ))}

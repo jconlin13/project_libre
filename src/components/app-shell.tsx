@@ -13,7 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { BookOpen, Home, Heart, Settings, LogOut, Menu, Moon, Sun, Link2, MessageSquare } from 'lucide-react'
+import { Home, Heart, Settings, LogOut, Menu, Moon, Sun, Link2, MessageSquare } from 'lucide-react'
+import Image from 'next/image'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
 import { useFontSize } from '@/components/font-size-provider'
@@ -99,7 +100,7 @@ export function AppShell({ children, user }: AppShellProps) {
             </Sheet>
 
             <Link href="/dashboard" className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
+              <Image src="/logos/logo.png" alt="Family Book Club" width={28} height={28} className="rounded" />
               <span className="font-semibold hidden sm:inline">Family Book Club</span>
             </Link>
 
