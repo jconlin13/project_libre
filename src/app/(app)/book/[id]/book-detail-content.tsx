@@ -3,13 +3,16 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Star, ExternalLink, BookOpen } from 'lucide-react'
+import { ArrowLeft, ExternalLink, BookOpen } from 'lucide-react'
 import { AmazonIcon } from '@/components/icons/amazon-icon'
 import { LibbyIcon } from '@/components/icons/libby-icon'
+import { StarRating } from '@/components/star-rating'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface BookDetailContentProps {
@@ -19,11 +22,16 @@ interface BookDetailContentProps {
 export default function BookDetailContent({ bookId }: BookDetailContentProps) {
   const [book, setBook] = useState<any>(null)
   const [readingProgress, setReadingProgress] = useState<{ progress: number | null; progress_pages: number | null } | null>(null)
-  const [userRating, setUserRating] = useState<number | null>(null)
-  const [hoverStar, setHoverStar] = useState(0)
+  const [userRating, setUserRating] = useState<number>(0)
   const [bookActivity, setBookActivity] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+
+  // Progress tracker state
+  const [progressMode, setProgressMode] = useState<'percent' | 'pages'>('percent')
+  const [editingProgress, setEditingProgress] = useState(false)
+  const [progressInput, setProgressInput] = useState('')
+  const [savingProgress, setSavingProgress] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -175,7 +183,7 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
         body: JSON.stringify({ bookId: Number(bookId), rating: newRating }),
       })
       if (res.ok) {
-        toast.success(`Rated ${newRating}/5`)
+        toast.success(`Rated ${Number.isInteger(newRating) ? newRating : newRating.toFixed(1)}/5`)
       } else {
         setUserRating(prevRating)
         const data = await res.json()
@@ -184,6 +192,43 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
     } catch {
       setUserRating(prevRating)
       toast.error('Failed to update rating')
+    }
+  }
+
+  async function handleProgressSave() {
+    const val = Number(progressInput)
+    if (isNaN(val) || val < 0 || !progressInput) return
+    setSavingProgress(true)
+    try {
+      const body: Record<string, unknown> = { bookId: Number(bookId) }
+      if (progressMode === 'pages') {
+        body.progressPages = val
+      } else {
+        body.progress = Math.min(val, 100)
+      }
+      const res = await fetch('/api/hardcover/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (res.ok) {
+        toast.success('Progress updated!')
+        // Update local state to reflect changes
+        if (progressMode === 'pages') {
+          setReadingProgress(prev => ({ progress: prev?.progress ?? null, progress_pages: val }))
+        } else {
+          setReadingProgress(prev => ({ progress: val, progress_pages: prev?.progress_pages ?? null }))
+        }
+        setEditingProgress(false)
+        setProgressInput('')
+      } else {
+        const data = await res.json()
+        toast.error(data.error || 'Failed to update')
+      }
+    } catch {
+      toast.error('Failed to update progress')
+    } finally {
+      setSavingProgress(false)
     }
   }
 
@@ -202,6 +247,7 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
 
       <Card>
         <CardContent className="pt-6">
+          {/* Top section: Cover + Info side by side */}
           <div className="flex flex-col md:flex-row gap-8">
             {/* Cover */}
             <div className="flex-shrink-0">
@@ -229,34 +275,10 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
 
               {/* Rating + Action buttons — side by side */}
               <div className="flex flex-col sm:flex-row gap-4">
-                {/* Rating — clickable */}
+                {/* Rating — clickable half-stars */}
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground mb-1">Your Rating</p>
-                  <div
-                    className="flex items-center gap-1"
-                    onMouseLeave={() => setHoverStar(0)}
-                  >
-                    {[1, 2, 3, 4, 5].map(star => {
-                      const active = hoverStar > 0 ? star <= hoverStar : star <= (userRating || 0)
-                      return (
-                        <button
-                          key={star}
-                          onClick={() => handleRating(star)}
-                          onMouseEnter={() => setHoverStar(star)}
-                          className="p-0 cursor-pointer"
-                        >
-                          <Star
-                            className={`h-5 w-5 transition-colors ${active ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30 hover:text-yellow-300'}`}
-                          />
-                        </button>
-                      )
-                    })}
-                    {userRating != null && userRating > 0 && (
-                      <span className="ml-2 text-sm text-muted-foreground">
-                        {userRating}/5
-                      </span>
-                    )}
-                  </div>
+                  <StarRating rating={userRating} onRate={handleRating} size="lg" />
                 </div>
 
                 {/* Action buttons */}
@@ -290,29 +312,84 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                 </div>
               </div>
 
-              {/* Progress */}
-              {progressPercent !== null && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium flex items-center gap-1">
-                      <BookOpen className="h-4 w-4" />
-                      Reading Progress
-                    </span>
-                    <span className="text-muted-foreground">{progressPercent}%</span>
+              {/* Your Progress — editable, toggleable between % and pages */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium flex items-center gap-1">
+                    <BookOpen className="h-4 w-4" />
+                    Your Progress
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      className={`text-[11px] px-2 py-0.5 rounded transition-colors ${progressMode === 'percent' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
+                      onClick={() => setProgressMode('percent')}
+                    >
+                      %
+                    </button>
+                    <button
+                      className={`text-[11px] px-2 py-0.5 rounded transition-colors ${progressMode === 'pages' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
+                      onClick={() => setProgressMode('pages')}
+                    >
+                      Pages
+                    </button>
                   </div>
-                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                  {readingProgress?.progress_pages && (
-                    <p className="text-xs text-muted-foreground">
-                      Page {readingProgress.progress_pages}{book.pages ? ` of ${book.pages}` : ''}
-                    </p>
-                  )}
                 </div>
-              )}
+                <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all"
+                    style={{ width: `${progressPercent ?? 0}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  {progressMode === 'percent' ? (
+                    <span>{progressPercent ?? 0}% complete</span>
+                  ) : (
+                    <span>
+                      {readingProgress?.progress_pages
+                        ? `Page ${readingProgress.progress_pages}${book.pages ? ` of ${book.pages}` : ''}`
+                        : `0${book.pages ? ` of ${book.pages}` : ''} pages`}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => {
+                      setEditingProgress(!editingProgress)
+                      setProgressInput('')
+                    }}
+                    className="text-primary hover:underline text-xs font-medium"
+                  >
+                    {editingProgress ? 'Cancel' : 'Update'}
+                  </button>
+                </div>
+                {editingProgress && (
+                  <div className="flex items-end gap-2 pt-1">
+                    <div className="flex-1">
+                      <Label className="text-[11px]">
+                        {progressMode === 'pages'
+                          ? `Page${book.pages ? ` (of ${book.pages})` : ''}`
+                          : '% complete'}
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={progressMode === 'percent' ? 100 : book.pages || 9999}
+                        placeholder={progressMode === 'pages' ? 'e.g. 150' : 'e.g. 45'}
+                        value={progressInput}
+                        onChange={e => setProgressInput(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleProgressSave()}
+                        className="h-8 text-xs mt-1"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleProgressSave}
+                      size="sm"
+                      className="h-8 text-xs"
+                      disabled={savingProgress}
+                    >
+                      {savingProgress ? 'Saving...' : 'Save'}
+                    </Button>
+                  </div>
+                )}
+              </div>
 
               {/* Metadata */}
               <div className="flex flex-wrap gap-2">
@@ -323,19 +400,18 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                   </Badge>
                 )}
               </div>
-
-              {/* Description */}
-              {book.description && (
-                <div>
-                  <h2 className="font-semibold mb-2">Description</h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-                    {book.description}
-                  </p>
-                </div>
-              )}
-
             </div>
           </div>
+
+          {/* Description — full width below the cover/info row */}
+          {book.description && (
+            <div className="mt-6 pt-6 border-t">
+              <h2 className="font-semibold mb-2">Description</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                {book.description}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

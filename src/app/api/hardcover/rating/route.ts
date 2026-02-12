@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
     const token = decrypt(user.hardcoverApiToken)
     const { bookId, rating } = await request.json()
 
-    if (!bookId || rating == null || rating < 0 || rating > 5) {
-      return NextResponse.json({ error: 'bookId and rating (0-5) are required' }, { status: 400 })
+    if (!bookId || rating == null || rating < 0 || rating > 5 || (rating % 0.5 !== 0)) {
+      return NextResponse.json({ error: 'bookId and rating (0-5, in 0.5 increments) are required' }, { status: 400 })
     }
 
     // Find the user_book entry for this book

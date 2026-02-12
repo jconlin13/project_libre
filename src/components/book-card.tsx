@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Library, Star, ExternalLink, ChevronRight } from 'lucide-react'
+import { Library, ExternalLink, ChevronRight } from 'lucide-react'
+import { StarRating } from '@/components/star-rating'
 import { toast } from 'sonner'
 import { getLibbySearchUrl, getHardcoverBookUrl } from '@/lib/hardcover'
 
@@ -45,7 +46,6 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
   const [progressMode, setProgressMode] = useState<'pages' | 'percent'>('pages')
   const [progressValue, setProgressValue] = useState('')
   const [saving, setSaving] = useState(false)
-  const [hoverStar, setHoverStar] = useState(0)
   const [currentRating, setCurrentRating] = useState(rating ?? 0)
 
   async function handleRating(newRating: number) {
@@ -58,7 +58,7 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
         body: JSON.stringify({ bookId: book.id, rating: newRating }),
       })
       if (res.ok) {
-        toast.success(`Rated ${newRating}/5`)
+        toast.success(`Rated ${Number.isInteger(newRating) ? newRating : newRating.toFixed(1)}/5`)
       } else {
         setCurrentRating(prevRating)
         const data = await res.json()
@@ -135,26 +135,9 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
         {author}
       </p>
 
-      {/* Rating stars — always visible, clickable */}
-      <div
-        className="flex items-center gap-0.5 mt-1"
-        onMouseLeave={() => setHoverStar(0)}
-      >
-        {[1, 2, 3, 4, 5].map(star => {
-          const active = hoverStar > 0 ? star <= hoverStar : star <= currentRating
-          return (
-            <button
-              key={star}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRating(star) }}
-              onMouseEnter={() => setHoverStar(star)}
-              className="p-0 cursor-pointer"
-            >
-              <Star
-                className={`h-3 w-3 transition-colors ${active ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30 hover:text-yellow-300'}`}
-              />
-            </button>
-          )
-        })}
+      {/* Rating stars — half-star support, clickable */}
+      <div className="mt-1" onClick={(e) => { e.preventDefault(); e.stopPropagation() }}>
+        <StarRating rating={currentRating} onRate={handleRating} size="sm" />
       </div>
 
       {/* Progress text */}
@@ -271,13 +254,8 @@ export function BookCard({ book, rating, status, progress, progressPages, showAc
           <p className="truncate text-sm font-medium">{book.title}</p>
           <p className="truncate text-xs text-muted-foreground">{author}</p>
           {rating != null && rating > 0 && (
-            <div className="flex items-center gap-0.5 mt-0.5">
-              {[1, 2, 3, 4, 5].map(star => (
-                <Star
-                  key={star}
-                  className={`h-3 w-3 ${star <= rating ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30'}`}
-                />
-              ))}
+            <div className="mt-0.5">
+              <StarRating rating={rating} size="sm" readOnly />
             </div>
           )}
           {progress != null && progress > 0 && (
@@ -327,13 +305,8 @@ export function BookCard({ book, rating, status, progress, progressPages, showAc
           <h3 className="font-semibold truncate">{book.title}</h3>
           <p className="text-sm text-muted-foreground">{author}</p>
           {rating != null && rating > 0 && (
-            <div className="mt-1 flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map(star => (
-                <Star
-                  key={star}
-                  className={`h-3.5 w-3.5 ${star <= rating ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30'}`}
-                />
-              ))}
+            <div className="mt-1">
+              <StarRating rating={rating} size="sm" readOnly />
             </div>
           )}
           {status && (
