@@ -178,7 +178,7 @@ export async function updateBookRating(
   `
   return await hardcoverQuery(token, mutation, {
     id: userBookId,
-    object: { rating },
+    object: { rating: rating === 0 ? null : rating },
   })
 }
 

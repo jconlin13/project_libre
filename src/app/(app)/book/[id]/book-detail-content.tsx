@@ -183,7 +183,7 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
         body: JSON.stringify({ bookId: Number(bookId), rating: newRating }),
       })
       if (res.ok) {
-        toast.success(`Rated ${Number.isInteger(newRating) ? newRating : newRating.toFixed(1)}/5`)
+        toast.success(newRating === 0 ? 'Rating cleared' : `Rated ${Number.isInteger(newRating) ? newRating : newRating.toFixed(1)}/5`)
       } else {
         setUserRating(prevRating)
         const data = await res.json()
@@ -279,6 +279,14 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground mb-1">Your Rating</p>
                   <StarRating rating={userRating} onRate={handleRating} size="lg" />
+                  {userRating > 0 && (
+                    <button
+                      onClick={() => handleRating(0)}
+                      className="text-[11px] text-muted-foreground hover:text-foreground mt-1 block"
+                    >
+                      Clear rating
+                    </button>
+                  )}
                 </div>
 
                 {/* Action buttons */}
