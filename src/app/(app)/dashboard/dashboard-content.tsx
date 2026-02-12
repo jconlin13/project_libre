@@ -10,7 +10,7 @@ import { BookCard } from '@/components/book-card'
 import { MemberCardSkeleton } from '@/components/loading-skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, CheckCircle } from 'lucide-react'
+import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, CheckCircle, Heart, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -48,6 +48,7 @@ interface DashboardContentProps {
 interface MemberBooks {
   reading: Array<{ id: number; book: any; rating?: number | null; user_book_reads?: Array<{ progress: number | null; progress_pages: number | null }> }>
   finished: Array<{ id: number; book: any; rating?: number | null }>
+  wantToRead: Array<{ id: number; book: any }>
 }
 
 export function DashboardContent({ currentUser, households, hasHousehold }: DashboardContentProps) {
@@ -60,6 +61,10 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
   const [activity, setActivity] = useState<any[]>([])
   const [myBooks, setMyBooks] = useState<MemberBooks | null>(null)
   const [loadingMyBooks, setLoadingMyBooks] = useState(false)
+  const [progressDialogOpen, setProgressDialogOpen] = useState(false)
+  const [progressBook, setProgressBook] = useState<any>(null)
+  const [progressValue, setProgressValue] = useState('')
+  const [progressMode, setProgressMode] = useState<'pages' | 'percent'>('pages')
 
   const fetchMemberBooks = useCallback(async (memberId: string) => {
     setLoadingMembers(prev => new Set(prev).add(memberId))
@@ -68,19 +73,22 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
       const baseUrl = isCurrentUser ? '/api/hardcover' : '/api/hardcover/member'
       const params = isCurrentUser ? '' : `&memberId=${memberId}`
 
-      const [readingRes, finishedRes] = await Promise.all([
+      const [readingRes, finishedRes, wantToReadRes] = await Promise.all([
         fetch(`${baseUrl}?action=reading${params}`),
-        fetch(`${baseUrl}?action=finished&limit=5${params}`),
+        fetch(`${baseUrl}?action=finished&limit=20${params}`),
+        fetch(`${baseUrl}?action=want-to-read${params}`),
       ])
 
       const readingData = await readingRes.json()
       const finishedData = await finishedRes.json()
+      const wantToReadData = await wantToReadRes.json()
 
       setMemberBooks(prev => ({
         ...prev,
         [memberId]: {
           reading: readingData.data || [],
           finished: finishedData.data || [],
+          wantToRead: wantToReadData.data || [],
         }
       }))
     } catch (error) {
@@ -101,11 +109,13 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
     setLoadingMyBooks(true)
     Promise.all([
       fetch('/api/hardcover?action=reading').then(r => r.json()),
-      fetch('/api/hardcover?action=finished&limit=5').then(r => r.json()),
-    ]).then(([readingData, finishedData]) => {
+      fetch('/api/hardcover?action=finished&limit=20').then(r => r.json()),
+      fetch('/api/hardcover?action=want-to-read').then(r => r.json()),
+    ]).then(([readingData, finishedData, wantToReadData]) => {
       setMyBooks({
         reading: readingData.data || [],
         finished: finishedData.data || [],
+        wantToRead: wantToReadData.data || [],
       })
     }).catch(console.error).finally(() => setLoadingMyBooks(false))
   }, [currentUser.hardcoverConnected])
@@ -162,6 +172,33 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
     } catch { toast.error('Failed to join household') }
   }
 
+  function handleUpdateProgress(ub: any) {
+    setProgressBook(ub)
+    const read = ub.user_book_reads?.[0]
+    if (read?.progress_pages) {
+      setProgressMode('pages')
+      setProgressValue(String(read.progress_pages))
+    } else if (read?.progress) {
+      setProgressMode('percent')
+      setProgressValue(String(Math.round(read.progress)))
+    } else {
+      setProgressMode('pages')
+      setProgressValue('')
+    }
+    setProgressDialogOpen(true)
+  }
+
+  // Horizontal scrollable row of book covers
+  function BookRow({ children }: { children: React.ReactNode }) {
+    return (
+      <div className="relative">
+        <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+          {children}
+        </div>
+      </div>
+    )
+  }
+
   // My Reading section — shown on every dashboard view
   function renderMyReading() {
     if (!currentUser.hardcoverConnected) {
@@ -192,59 +229,71 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
     if (!myBooks) return null
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Currently Reading */}
         {myBooks.reading.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
-                Currently Reading
-              </CardTitle>
-              <CardDescription>{myBooks.reading.length} {myBooks.reading.length === 1 ? 'book' : 'books'}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {myBooks.reading.map((ub: any) => {
-                  const read = ub.user_book_reads?.[0]
-                  return (
-                    <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
-                      <BookCard
-                        book={ub.book}
-                        progress={read?.progress}
-                        progressPages={read?.progress_pages}
-                        compact
-                      />
-                    </Link>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <BookOpen className="h-5 w-5" />
+              <h3 className="text-lg font-semibold">Currently Reading</h3>
+              <span className="text-sm text-muted-foreground">({myBooks.reading.length})</span>
+            </div>
+            <BookRow>
+              {myBooks.reading.map((ub: any) => {
+                const read = ub.user_book_reads?.[0]
+                return (
+                  <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
+                    <BookCard
+                      book={ub.book}
+                      progress={read?.progress}
+                      progressPages={read?.progress_pages}
+                      onUpdateProgress={() => handleUpdateProgress(ub)}
+                      cover
+                    />
+                  </Link>
+                )
+              })}
+            </BookRow>
+          </div>
         )}
 
         {/* Recently Finished */}
         {myBooks.finished.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                Recently Finished
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {myBooks.finished.map((ub: any) => (
-                  <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
-                    <BookCard book={ub.book} rating={ub.rating} compact />
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <CheckCircle className="h-5 w-5" />
+              <h3 className="text-lg font-semibold">Recently Finished</h3>
+              <span className="text-sm text-muted-foreground">({myBooks.finished.length})</span>
+            </div>
+            <BookRow>
+              {myBooks.finished.map((ub: any) => (
+                <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
+                  <BookCard book={ub.book} rating={ub.rating} cover />
+                </Link>
+              ))}
+            </BookRow>
+          </div>
         )}
 
-        {myBooks.reading.length === 0 && myBooks.finished.length === 0 && (
+        {/* Want to Read */}
+        {myBooks.wantToRead.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Heart className="h-5 w-5" />
+              <h3 className="text-lg font-semibold">Want to Read</h3>
+              <span className="text-sm text-muted-foreground">({myBooks.wantToRead.length})</span>
+            </div>
+            <BookRow>
+              {myBooks.wantToRead.map((ub: any) => (
+                <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
+                  <BookCard book={ub.book} cover />
+                </Link>
+              ))}
+            </BookRow>
+          </div>
+        )}
+
+        {myBooks.reading.length === 0 && myBooks.finished.length === 0 && myBooks.wantToRead.length === 0 && (
           <Card>
             <CardContent className="py-8 text-center">
               <BookMarked className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
@@ -254,8 +303,101 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
             </CardContent>
           </Card>
         )}
+
+        {/* Update Progress Dialog */}
+        <Dialog open={progressDialogOpen} onOpenChange={setProgressDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Update Progress</DialogTitle>
+              <DialogDescription>
+                {progressBook?.book?.title ? `How far are you in "${progressBook.book.title}"?` : 'Update your reading progress'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="flex gap-2">
+                <Button
+                  variant={progressMode === 'pages' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => { setProgressMode('pages'); setProgressValue('') }}
+                >
+                  Page Number
+                </Button>
+                <Button
+                  variant={progressMode === 'percent' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => { setProgressMode('percent'); setProgressValue('') }}
+                >
+                  Percentage
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  {progressMode === 'pages'
+                    ? `Page number${progressBook?.book?.pages ? ` (of ${progressBook.book.pages})` : ''}`
+                    : 'Percent complete (0-100)'}
+                </Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={progressMode === 'percent' ? 100 : progressBook?.book?.pages || 9999}
+                  placeholder={progressMode === 'pages' ? 'e.g. 150' : 'e.g. 45'}
+                  value={progressValue}
+                  onChange={e => setProgressValue(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && saveProgress()}
+                />
+              </div>
+              <Button onClick={saveProgress} className="w-full">
+                Save Progress
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     )
+  }
+
+  async function saveProgress() {
+    if (!progressBook || !progressValue) return
+    const val = Number(progressValue)
+    if (isNaN(val) || val < 0) return
+
+    try {
+      const body: any = { bookId: progressBook.book.id }
+      if (progressMode === 'pages') {
+        body.progressPages = val
+      } else {
+        body.progress = Math.min(val, 100)
+      }
+
+      const res = await fetch('/api/hardcover/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (res.ok) {
+        toast.success('Progress updated!')
+        setProgressDialogOpen(false)
+        // Refresh books
+        setLoadingMyBooks(true)
+        Promise.all([
+          fetch('/api/hardcover?action=reading').then(r => r.json()),
+          fetch('/api/hardcover?action=finished&limit=20').then(r => r.json()),
+          fetch('/api/hardcover?action=want-to-read').then(r => r.json()),
+        ]).then(([readingData, finishedData, wantToReadData]) => {
+          setMyBooks({
+            reading: readingData.data || [],
+            finished: finishedData.data || [],
+            wantToRead: wantToReadData.data || [],
+          })
+        }).catch(console.error).finally(() => setLoadingMyBooks(false))
+      } else {
+        const data = await res.json()
+        toast.error(data.error || 'Failed to update progress')
+      }
+    } catch {
+      toast.error('Failed to update progress')
+    }
   }
 
   if (!hasHousehold) {

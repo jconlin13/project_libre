@@ -89,6 +89,7 @@ export async function fetchCurrentlyReading(token: string) {
           ${BOOK_FIELDS}
         }
         user_book_reads(order_by: {started_at: desc_nulls_last}, limit: 1) {
+          id
           progress
           progress_pages
           started_at
@@ -157,6 +158,55 @@ export async function searchBooks(token: string, searchQuery: string) {
   }`
   const data = await hardcoverQuery(token, query)
   return data?.books || []
+}
+
+export async function updateReadingProgress(
+  token: string,
+  userBookId: number,
+  readId: number | null,
+  progress?: number,
+  progressPages?: number
+) {
+  if (readId) {
+    // Update existing read
+    const object: Record<string, unknown> = {}
+    if (progress != null) object.progress = progress / 100 // API expects 0.0-1.0
+    if (progressPages != null) object.progress_pages = progressPages
+
+    const mutation = `
+      mutation UpdateUserBookRead($id: Int!, $object: DatesReadInput!) {
+        update_user_book_read(id: $id, object: $object) {
+          id
+          user_book_read {
+            id
+            progress
+            progress_pages
+          }
+        }
+      }
+    `
+    return await hardcoverQuery(token, mutation, { id: readId, object })
+  } else {
+    // Insert new read
+    const userBookRead: Record<string, unknown> = {}
+    if (progress != null) userBookRead.progress = progress / 100
+    if (progressPages != null) userBookRead.progress_pages = progressPages
+    userBookRead.started_at = new Date().toISOString().split('T')[0]
+
+    const mutation = `
+      mutation InsertUserBookRead($user_book_id: Int!, $user_book_read: DatesReadInput!) {
+        insert_user_book_read(user_book_id: $user_book_id, user_book_read: $user_book_read) {
+          id
+          user_book_read {
+            id
+            progress
+            progress_pages
+          }
+        }
+      }
+    `
+    return await hardcoverQuery(token, mutation, { user_book_id: userBookId, user_book_read: userBookRead })
+  }
 }
 
 export function getBookCoverUrl(book: HardcoverBook): string {

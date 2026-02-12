@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Library, Star, ExternalLink } from 'lucide-react'
+import { Library, Star, ExternalLink, ChevronRight } from 'lucide-react'
 import { getLibbySearchUrl, getHardcoverBookUrl } from '@/lib/hardcover'
 
 interface BookCardProps {
@@ -23,15 +23,90 @@ interface BookCardProps {
   showActions?: boolean
   onRecommend?: () => void
   onPlusOne?: () => void
+  onUpdateProgress?: () => void
   compact?: boolean
+  cover?: boolean
 }
 
-export function BookCard({ book, rating, status, progress, progressPages, showActions, onRecommend, onPlusOne, compact }: BookCardProps) {
+export function BookCard({ book, rating, status, progress, progressPages, showActions, onRecommend, onPlusOne, onUpdateProgress, compact, cover }: BookCardProps) {
   const author = book.cached_contributors?.[0]?.author?.name || 'Unknown Author'
   const coverUrl = book.cached_image?.url || null
 
   const libbyUrl = getLibbySearchUrl(book.title, author)
   const hardcoverUrl = book.slug ? getHardcoverBookUrl(book.slug) : null
+
+  // Cover mode: vertical book cover with title + author centered below
+  if (cover) {
+    const progressPercent = progress != null && progress > 0
+      ? Math.round(Math.min(progress, 100))
+      : progressPages != null && progressPages > 0 && book.pages
+        ? Math.round(Math.min((progressPages / book.pages) * 100, 100))
+        : null
+
+    return (
+      <div className="flex flex-col items-center w-[120px] flex-shrink-0 group">
+        {/* Cover image */}
+        <div className="relative w-[120px] h-[180px] overflow-hidden rounded-lg shadow-md transition-shadow group-hover:shadow-lg">
+          {coverUrl ? (
+            <Image src={coverUrl} alt={book.title} fill className="object-cover" sizes="120px" />
+          ) : (
+            <div className="h-full w-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
+              No cover
+            </div>
+          )}
+          {/* Progress overlay at bottom of cover */}
+          {progressPercent !== null && (
+            <div className="absolute bottom-0 left-0 right-0">
+              <div className="h-1.5 bg-black/30">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Title (italic, centered) */}
+        <p className="mt-2 text-xs font-medium italic text-center leading-tight line-clamp-2 w-full">
+          {book.title}
+        </p>
+
+        {/* Author (centered) */}
+        <p className="mt-0.5 text-[11px] text-muted-foreground text-center leading-tight line-clamp-1 w-full">
+          {author}
+        </p>
+
+        {/* Rating stars */}
+        {rating != null && rating > 0 && (
+          <div className="flex items-center gap-0.5 mt-1">
+            {[1, 2, 3, 4, 5].map(star => (
+              <Star
+                key={star}
+                className={`h-3 w-3 ${star <= rating ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30'}`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Progress text */}
+        {progressPercent !== null && (
+          <p className="text-[11px] text-muted-foreground mt-0.5">{progressPercent}%</p>
+        )}
+
+        {/* Update Progress button */}
+        {onUpdateProgress && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onUpdateProgress() }}
+            className="mt-1.5 flex items-center gap-0.5 text-[11px] text-primary hover:text-primary/80 transition-colors font-medium"
+          >
+            Update Progress
+            <ChevronRight className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+    )
+  }
 
   if (compact) {
     return (
@@ -48,10 +123,14 @@ export function BookCard({ book, rating, status, progress, progressPages, showAc
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{book.title}</p>
           <p className="truncate text-xs text-muted-foreground">{author}</p>
-          {rating && (
-            <div className="flex items-center gap-1 mt-0.5">
-              <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-              <span className="text-xs">{rating}/5</span>
+          {rating != null && rating > 0 && (
+            <div className="flex items-center gap-0.5 mt-0.5">
+              {[1, 2, 3, 4, 5].map(star => (
+                <Star
+                  key={star}
+                  className={`h-3 w-3 ${star <= rating ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30'}`}
+                />
+              ))}
             </div>
           )}
           {progress != null && progress > 0 && (
@@ -100,7 +179,7 @@ export function BookCard({ book, rating, status, progress, progressPages, showAc
         <div className="flex flex-1 flex-col min-w-0">
           <h3 className="font-semibold truncate">{book.title}</h3>
           <p className="text-sm text-muted-foreground">{author}</p>
-          {rating && (
+          {rating != null && rating > 0 && (
             <div className="mt-1 flex items-center gap-1">
               {[1, 2, 3, 4, 5].map(star => (
                 <Star
@@ -108,7 +187,6 @@ export function BookCard({ book, rating, status, progress, progressPages, showAc
                   className={`h-3.5 w-3.5 ${star <= rating ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/30'}`}
                 />
               ))}
-              <span className="ml-1 text-xs text-muted-foreground">{rating}</span>
             </div>
           )}
           {status && (
