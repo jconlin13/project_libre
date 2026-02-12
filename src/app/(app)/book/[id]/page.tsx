@@ -17,5 +17,7 @@ export default async function BookPage({ params }: BookPageProps) {
 
   const { id } = await params;
 
-  return <BookDetailContent bookId={id} />;
+  const firstName = user.name?.split(' ')[0] || user.name || 'You';
+
+  return <BookDetailContent bookId={id} userName={firstName} />;
 }

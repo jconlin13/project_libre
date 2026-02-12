@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 interface BookDetailContentProps {
   bookId: string
+  userName: string
 }
 
 const STATUS_CONFIG: Record<number, {
@@ -33,7 +34,7 @@ const STATUS_CONFIG: Record<number, {
   5: { label: 'Did Not Finish', icon: Ban, textColor: '#b91c1c', bgColor: '#fee2e2', borderColor: '#fca5a5' },
 }
 
-export default function BookDetailContent({ bookId }: BookDetailContentProps) {
+export default function BookDetailContent({ bookId, userName }: BookDetailContentProps) {
   const [book, setBook] = useState<any>(null)
   const [readingProgress, setReadingProgress] = useState<{ progress: number | null; progress_pages: number | null } | null>(null)
   const [userRating, setUserRating] = useState<number>(0)
@@ -107,6 +108,7 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                 type: 'progress',
                 value: `${Math.round(read.progress)}%`,
                 date: read.started_at,
+                user: userName,
               })
             }
             if (read.progress_pages != null && read.progress_pages > 0) {
@@ -114,6 +116,7 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                 type: 'pages',
                 value: `page ${read.progress_pages}`,
                 date: read.started_at,
+                user: userName,
               })
             }
           })
@@ -122,6 +125,16 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
               type: 'rating',
               value: `${userBookMatch.rating}/5 stars`,
               date: userBookMatch.date_added || userBookMatch.last_read_date,
+              user: userName,
+            })
+          }
+          // Add status as activity
+          if (userBookMatch.status_id && STATUS_CONFIG[userBookMatch.status_id]) {
+            activityItems.push({
+              type: 'status',
+              value: STATUS_CONFIG[userBookMatch.status_id].label,
+              date: userBookMatch.date_added,
+              user: userName,
             })
           }
           setBookActivity(activityItems)
@@ -540,9 +553,11 @@ export default function BookDetailContent({ bookId }: BookDetailContentProps) {
                   <div className="mt-1.5 h-2 w-2 rounded-full bg-primary flex-shrink-0" />
                   <div className="flex-1">
                     <p>
-                      {item.type === 'progress' && `Updated progress to ${item.value}`}
-                      {item.type === 'pages' && `Read to ${item.value}`}
-                      {item.type === 'rating' && `Rated ${item.value}`}
+                      <span className="font-bold">{item.user}</span>
+                      {item.type === 'progress' && ` updated progress to ${item.value}`}
+                      {item.type === 'pages' && ` read to ${item.value}`}
+                      {item.type === 'rating' && ` rated ${item.value}`}
+                      {item.type === 'status' && ` shelved as ${item.value}`}
                     </p>
                     {item.date && (
                       <p className="text-xs text-muted-foreground mt-0.5">
