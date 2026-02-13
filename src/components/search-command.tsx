@@ -34,6 +34,8 @@ interface SearchResult {
     rating: number | null
     book: BookType
   }>
+  // TODO: Phase 3 — Recommended books from other users
+  // recommendedBooks: BookType[]
   hardcoverResults: BookType[]
   authorBookResults: BookType[]
   networkBooks: Array<{
@@ -222,11 +224,13 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
   }
 
   const hasMyBooks = results && results.myBooks.length > 0
+  // TODO: Phase 3 — Recommended books section
+  // const hasRecommended = results && results.recommendedBooks && results.recommendedBooks.length > 0
   const hasHardcover = results && results.hardcoverResults.length > 0
   const hasAuthorBooks = results && results.authorBookResults && results.authorBookResults.length > 0
   const hasNetwork = results && results.networkBooks.length > 0
   const hasUsers = results && results.matchedUsers && results.matchedUsers.length > 0
-  const hasAnyResults = hasMyBooks || hasHardcover || hasAuthorBooks || hasNetwork || hasUsers
+  const hasAnyResults = hasMyBooks || /* hasRecommended || */ hasHardcover || hasAuthorBooks || hasNetwork || hasUsers
   const showTabs = query.trim().length >= 3
 
   return (
@@ -262,7 +266,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                   activeTab === tab.id
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -315,6 +319,18 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
               ))}
             </div>
           )}
+
+          {/* TODO: Phase 3 — Recommended books section (after My Books, before catalog)
+          {hasRecommended && (activeTab === 'all' || activeTab === 'books') && (
+            <div className="px-2 py-1.5">
+              <div className="px-2 py-1 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <ThumbsUp className="h-3 w-3" />
+                Recommended for You
+              </div>
+              {results!.recommendedBooks.map((book) => renderBookRow(book, 'rec'))}
+            </div>
+          )}
+          */}
 
           {/* Hardcover catalog section (All + Books tabs) */}
           {hasHardcover && (activeTab === 'all' || activeTab === 'books') && (

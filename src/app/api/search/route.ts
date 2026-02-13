@@ -53,6 +53,8 @@ export async function GET(request: NextRequest) {
     let allMyBooks: UserBook[] = []
     let hardcoverResults: HardcoverBook[] = []
     let authorBookResults: HardcoverBook[] = []
+    // TODO: Phase 3 — Recommended books search
+    // let recommendedBooks: HardcoverBook[] = []
 
     try {
       if (tab === 'all' || tab === 'books') {
@@ -68,11 +70,28 @@ export async function GET(request: NextRequest) {
         // Also fetch user's books to mark which ones they already have
         const results = await Promise.all([
           fetchAllUserBooks(token),
-          searchByAuthor(token, q, 5),
+          searchByAuthor(token, q, perPage),
         ])
         allMyBooks = results[0]
         authorBookResults = results[1]
       }
+
+      // TODO: Phase 3 — Fetch recommended books matching search query
+      // When recommendations are implemented, search books that other users
+      // have recommended to the current user, filtered by query match.
+      // if (tab === 'all' || tab === 'books') {
+      //   const recommendations = await prisma.recommendation.findMany({
+      //     where: { recipientId: user.id },
+      //     include: { book: true },
+      //   })
+      //   recommendedBooks = recommendations
+      //     .map((r) => r.book)
+      //     .filter((book) => {
+      //       const title = book.title?.toLowerCase() || ''
+      //       const author = book.cached_contributors?.[0]?.author?.name?.toLowerCase() || ''
+      //       return title.includes(qLower) || author.includes(qLower)
+      //     })
+      // }
     } catch (err) {
       console.error('Search: Hardcover API error:', err)
       return NextResponse.json(
@@ -201,6 +220,9 @@ export async function GET(request: NextRequest) {
         authorBookResults: tab === 'authors' ? filteredAuthorBooks : [],
         networkBooks: tab === 'all' ? networkBooks : [],
         matchedUsers: (tab === 'all' || tab === 'users') ? matchedUsers : [],
+        // TODO: Phase 3 — Recommended books matching search query
+        // Displayed after My Books, before Hardcover catalog results.
+        // recommendedBooks: (tab === 'all' || tab === 'books') ? recommendedBooks : [],
       },
     })
   } catch (error) {

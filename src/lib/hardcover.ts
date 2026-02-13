@@ -236,11 +236,15 @@ export async function searchBooks(token: string, searchQuery: string, perPage = 
   return booksData?.books || []
 }
 
-export async function searchByAuthor(token: string, searchQuery: string, perPage = 5) {
-  // Step 1: Search for authors via Typesense
+export async function searchByAuthor(token: string, searchQuery: string, perPage = 20) {
+  // Strategy: use the standard book search (high relevance) with a large page size,
+  // then filter results to only books whose author_names field matches the query.
+  // This works because Typesense indexes author_names on every book document,
+  // so searching "hemingway" returns his popular books first (high relevance),
+  // and we then filter to only those where he's actually the author.
   const searchQ = `
     query Search($q: String!) {
-      search(query: $q, query_type: "authors", per_page: ${perPage}, page: 1) {
+      search(query: $q, query_type: "books", per_page: ${perPage * 3}, page: 1) {
         results
       }
     }
@@ -249,37 +253,29 @@ export async function searchByAuthor(token: string, searchQuery: string, perPage
   const hits = searchData?.search?.results?.hits || []
   if (hits.length === 0) return []
 
-  // Step 2: Fetch authors with their book contributions
-  const authorIds = hits.map((hit: any) => hit.document.id)
-  const authorsQuery = `{
-    authors(where: {id: {_in: [${authorIds.join(',')}]}}) {
-      id
-      name
-      slug
-      cached_image
-      books_count
-      contributions(order_by: {book: {users_count: desc_nulls_last}}, limit: 20) {
-        book {
-          ${BOOK_FIELDS}
-        }
-      }
+  // Filter hits to only those where the author name matches the search query
+  const qLower = searchQuery.toLowerCase()
+  const qWords = qLower.split(/\s+/).filter(Boolean)
+  const authorHits = hits.filter((hit: any) => {
+    const authorNames: string[] = hit.document.author_names || []
+    return authorNames.some((name: string) => {
+      const nameLower = name.toLowerCase()
+      // Match if all query words appear in any author name
+      return qWords.every((word: string) => nameLower.includes(word))
+    })
+  }).slice(0, perPage)
+
+  if (authorHits.length === 0) return []
+
+  // Fetch full book data with cached_image from GraphQL
+  const bookIds = authorHits.map((hit: any) => hit.document.id)
+  const booksQuery = `{
+    books(where: {id: {_in: [${bookIds.join(',')}]}}) {
+      ${BOOK_FIELDS}
     }
   }`
-  const authorsData = await hardcoverQuery(token, authorsQuery)
-  const authors = authorsData?.authors || []
-
-  // Flatten: extract unique books from all matched authors
-  const seenBookIds = new Set<number>()
-  const books: HardcoverBook[] = []
-  for (const author of authors) {
-    for (const contribution of author.contributions || []) {
-      if (contribution.book && !seenBookIds.has(contribution.book.id)) {
-        seenBookIds.add(contribution.book.id)
-        books.push(contribution.book)
-      }
-    }
-  }
-  return books
+  const booksData = await hardcoverQuery(token, booksQuery)
+  return booksData?.books || []
 }
 
 export function getHardcoverAuthorUrl(slug: string): string {
