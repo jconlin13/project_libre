@@ -195,13 +195,31 @@ export async function addBookToWantToRead(token: string, bookId: number) {
 }
 
 export async function searchBooks(token: string, searchQuery: string) {
-  const query = `{
-    books(where: {title: {_ilike: "%${searchQuery.replace(/"/g, '\\"')}%"}}, limit: 10) {
-      ${BOOK_FIELDS}
+  const query = `
+    query Search($q: String!) {
+      search(query: $q, query_type: "books", per_page: 10, page: 1) {
+        results
+      }
     }
-  }`
-  const data = await hardcoverQuery(token, query)
-  return data?.books || []
+  `
+  const data = await hardcoverQuery(token, query, { q: searchQuery })
+  // search returns { results: { hits: [...] } } with Typesense format
+  const hits = data?.search?.results?.hits || []
+  return hits.map((hit: any) => {
+    const doc = hit.document
+    return {
+      id: doc.id,
+      title: doc.title,
+      slug: doc.slug,
+      cached_image: doc.image ? { url: doc.image } : null,
+      cached_contributors: doc.author_names?.length
+        ? doc.author_names.map((name: string) => ({ author: { name, slug: '' } }))
+        : [],
+      pages: doc.pages,
+      release_date: doc.release_date,
+      description: doc.description,
+    } as HardcoverBook
+  })
 }
 
 export async function updateBookRating(

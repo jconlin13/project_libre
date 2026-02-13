@@ -74,7 +74,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
   const doSearch = useCallback(async (q: string) => {
-    if (q.trim().length < 2) {
+    if (q.trim().length < 3) {
       setResults(null)
       setLoading(false)
       return
@@ -83,9 +83,16 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q.trim())}`)
       const data = await res.json()
+      if (!res.ok) {
+        console.error('Search API error:', data.error)
+        toast.error(data.error || 'Search failed')
+        setResults(null)
+        return
+      }
+      console.log('Search results:', data.data)
       setResults(data.data || null)
-    } catch {
-      console.error('Search failed')
+    } catch (err) {
+      console.error('Search failed:', err)
     } finally {
       setLoading(false)
     }
@@ -93,7 +100,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (query.trim().length < 2) {
+    if (query.trim().length < 3) {
       setResults(null)
       return
     }
@@ -177,7 +184,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
 
         {/* Results */}
         <div className="max-h-80 overflow-y-auto">
-          {query.trim().length >= 2 && !loading && !hasAnyResults && (
+          {query.trim().length >= 3 && !loading && !hasAnyResults && (
             <div className="py-8 text-center text-sm text-muted-foreground">
               No results found
             </div>

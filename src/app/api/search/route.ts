@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const q = searchParams.get('q')?.trim()
 
-    if (!q || q.length < 2) {
+    if (!q || q.length < 3) {
       return NextResponse.json({ data: { myBooks: [], hardcoverResults: [], networkBooks: [] } })
     }
 
@@ -45,10 +45,24 @@ export async function GET(request: NextRequest) {
     const token = decrypt(user.hardcoverApiToken)
 
     // 1. Fetch user's own books and filter client-side
-    const [allMyBooks, hardcoverResults] = await Promise.all([
-      fetchAllUserBooks(token),
-      searchBooks(token, q),
-    ])
+    let allMyBooks: UserBook[] = []
+    let hardcoverResults: HardcoverBook[] = []
+    try {
+      const results = await Promise.all([
+        fetchAllUserBooks(token),
+        searchBooks(token, q),
+      ])
+      allMyBooks = results[0]
+      hardcoverResults = results[1]
+    } catch (err) {
+      console.error('Search: Hardcover API error:', err)
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Hardcover API error' },
+        { status: 502 }
+      )
+    }
+
+    console.log(`Search "${q}": ${allMyBooks.length} user books, ${hardcoverResults.length} hardcover results`)
 
     const myBooks = allMyBooks.filter((ub: UserBook) => {
       const title = ub.book.title?.toLowerCase() || ''
