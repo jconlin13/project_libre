@@ -350,11 +350,16 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
         {/* Currently Reading */}
         {myBooks.reading.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <BookOpen className="h-5 w-5" />
-              <h3 className="text-lg font-semibold">Currently Reading</h3>
-              <CountBadge count={myBooks.reading.length} />
-            </div>
+            <Link href="/books/currently-reading" className="flex items-center justify-between group hover:bg-muted/50 rounded-lg px-2 py-1 -mx-2 transition-colors mb-4">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                <h3 className="text-lg font-semibold">Currently Reading</h3>
+                <CountBadge count={myBooks.reading.length} />
+              </div>
+              <span className="text-sm text-muted-foreground group-hover:text-foreground flex items-center gap-1 transition-colors">
+                See All <ChevronRight className="h-4 w-4" />
+              </span>
+            </Link>
             <BookRow>
               {myBooks.reading.map((ub: any) => {
                 const read = ub.user_book_reads?.[0]
@@ -377,11 +382,16 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
         {/* Recently Finished */}
         {myBooks.finished.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <CheckCircle className="h-5 w-5" />
-              <h3 className="text-lg font-semibold">Recently Finished</h3>
-              <CountBadge count={myBooks.finished.length} />
-            </div>
+            <Link href="/books/read" className="flex items-center justify-between group hover:bg-muted/50 rounded-lg px-2 py-1 -mx-2 transition-colors mb-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                <h3 className="text-lg font-semibold">Read</h3>
+                <CountBadge count={myBooks.finished.length} />
+              </div>
+              <span className="text-sm text-muted-foreground group-hover:text-foreground flex items-center gap-1 transition-colors">
+                See All <ChevronRight className="h-4 w-4" />
+              </span>
+            </Link>
             <BookRow>
               {myBooks.finished.map((ub: any) => (
                 <Link key={ub.id} href={`/book/${ub.book.id}`} className="block h-full">
@@ -395,11 +405,16 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
         {/* Want to Read */}
         {myBooks.wantToRead.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="h-5 w-5" />
-              <h3 className="text-lg font-semibold">Want to Read</h3>
-              <CountBadge count={myBooks.wantToRead.length} />
-            </div>
+            <Link href="/books/want-to-read" className="flex items-center justify-between group hover:bg-muted/50 rounded-lg px-2 py-1 -mx-2 transition-colors mb-4">
+              <div className="flex items-center gap-2">
+                <Heart className="h-5 w-5" />
+                <h3 className="text-lg font-semibold">Want to Read</h3>
+                <CountBadge count={myBooks.wantToRead.length} />
+              </div>
+              <span className="text-sm text-muted-foreground group-hover:text-foreground flex items-center gap-1 transition-colors">
+                See All <ChevronRight className="h-4 w-4" />
+              </span>
+            </Link>
             <BookRow>
               {myBooks.wantToRead.map((ub: any) => (
                 <Link key={ub.id} href={`/book/${ub.book.id}`} className="block h-full">

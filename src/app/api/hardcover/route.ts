@@ -5,6 +5,7 @@ import {
   fetchCurrentlyReading,
   fetchFinishedBooks,
   fetchWantToRead,
+  fetchDidNotFinish,
   fetchAllUserBooks,
   fetchUserProfile,
   fetchBookById,
@@ -74,6 +75,9 @@ export async function GET(request: NextRequest) {
         break
       case 'want-to-read':
         data = await fetchWantToRead(token)
+        break
+      case 'dnf':
+        data = await fetchDidNotFinish(token)
         break
       case 'book':
         const bookId = searchParams.get('bookId')

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, CheckCircle, BookMarked, Bookmark, Ban, ChevronDown } from 'lucide-react'
+import { ArrowLeft, BookOpen, CheckCircle, BookMarked, Bookmark, Ban, ChevronDown, ThumbsUp } from 'lucide-react'
 import { AmazonIcon } from '@/components/icons/amazon-icon'
 import { LibbyIcon } from '@/components/icons/libby-icon'
 import { HardcoverIcon } from '@/components/icons/hardcover-icon'
@@ -387,6 +387,22 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
               ) : bookStatus === null && !loading ? (
                 <p className="text-sm text-muted-foreground italic">Not in your library</p>
               ) : null}
+
+              {/* Recommend button */}
+              {bookStatus !== null && (
+                <div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-sm"
+                    style={{ maxWidth: '90%' }}
+                    disabled
+                  >
+                    <ThumbsUp className="h-4 w-4" />
+                    Recommend
+                  </Button>
+                </div>
+              )}
 
               {/* Rating + Progress + Action buttons — side by side */}
               <div className="flex flex-col sm:flex-row gap-4">

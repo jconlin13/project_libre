@@ -142,6 +142,24 @@ export async function fetchWantToRead(token: string) {
   return data?.me?.[0]?.user_books || []
 }
 
+export async function fetchDidNotFinish(token: string) {
+  const query = `{
+    me {
+      user_books(where: {status_id: {_eq: 5}}, order_by: {updated_at: desc}) {
+        id
+        status_id
+        rating
+        date_added
+        book {
+          ${BOOK_FIELDS}
+        }
+      }
+    }
+  }`
+  const data = await hardcoverQuery(token, query)
+  return data?.me?.[0]?.user_books || []
+}
+
 export async function fetchBookById(token: string, bookId: number) {
   const query = `{
     books(where: {id: {_eq: ${bookId}}}) {
