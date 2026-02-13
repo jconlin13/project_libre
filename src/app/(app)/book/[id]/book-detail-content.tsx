@@ -313,8 +313,8 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
         <CardContent className="pt-6">
           {/* Top section: Cover + Info side by side */}
           <div className="flex flex-col md:flex-row gap-8">
-            {/* Cover */}
-            <div className="flex-shrink-0">
+            {/* Cover + Metadata */}
+            <div className="flex-shrink-0 flex flex-col items-center">
               {coverUrl ? (
                 <Image
                   src={coverUrl}
@@ -328,6 +328,15 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                   <BookOpen className="h-12 w-12 text-muted-foreground" />
                 </div>
               )}
+              {/* Metadata badges centered under cover */}
+              <div className="flex flex-wrap justify-center gap-2 mt-3 w-[200px]">
+                {book.pages && <Badge variant="secondary">{book.pages} pages</Badge>}
+                {book.release_date && (
+                  <Badge variant="secondary">
+                    Released: {new Date(book.release_date).toLocaleDateString()}
+                  </Badge>
+                )}
+              </div>
             </div>
 
             {/* Info */}
@@ -548,16 +557,6 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
               </div>
               </div>
               {/* End flex row */}
-
-              {/* Metadata */}
-              <div className="flex flex-wrap gap-2">
-                {book.pages && <Badge variant="secondary">{book.pages} pages</Badge>}
-                {book.release_date && (
-                  <Badge variant="secondary">
-                    Released: {new Date(book.release_date).toLocaleDateString()}
-                  </Badge>
-                )}
-              </div>
             </div>
           </div>
 
