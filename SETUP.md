@@ -170,28 +170,14 @@ __tests__/                      — Unit tests
 
 ---
 
-## UI Features
+## Features
 
-### Book Detail Page (`/book/[id]`)
-- **Status badge** with colored popover to change status (Want to Read / Currently Reading / Read / Did Not Finish), writes back to Hardcover API
-- **Half-star ratings** (0.5 increments) with visual half-filled stars on hover and display, plus "Clear rating" to reset
-- **Progress tracker** toggleable between percentage and page count, synced with Hardcover
-- **Activity log** showing bold user name before each action (e.g., "**Jack** rated 4.5/5")
-- **External links** with custom-styled buttons: Libby (maroon), Hardcover (indigo with rotated book icon), Amazon (gold) — each with hover darkening
-
-### Dashboard (`/dashboard`)
-- **Arrow-based carousel navigation** with `<` `>` buttons flanking each book row (no scrollbar)
-- **Progress overlay** on cover art — dark grey bar at bottom of each book cover with centered percentage text
-- **Vertically aligned card elements** — ratings and update buttons align across cards regardless of title length
-- **Tab navigation** (My Books, Activity, Recommendations, Goals, Stats)
-- **Count badges** with fixed pixel sizing (don't scale with font size)
-
-### Global
-- **Custom logo** (Celtic tree of life SVG) in header
-- **Font size scaling** (`A|A` toggle) — 10% per level, up to 150%, persisted in localStorage, with keyboard shortcuts (Cmd+/Cmd-/Cmd+0)
-- **Forest green primary color** (RGB 46, 67, 46) matching the logo, used for all active/selected elements
-- **Dark/light theme** toggle
-- **Responsive header** with mobile hamburger menu
+- **Dashboard** — Book carousels grouped by reading status, with carousel navigation, ratings, and progress tracking
+- **Book detail** (`/book/[id]`) — Status management, half-star ratings, reading progress (% or pages), activity log, external links (Libby, Hardcover, Amazon)
+- **Recommendations** — Search Hardcover, send book recommendations to household members
+- **Households** — Create/join groups via invite code, view member profiles and reading activity
+- **Settings** — Connect/disconnect Hardcover API token (encrypted at rest)
+- **Accessibility** — Font size scaling (Cmd+/Cmd-), dark/light theme toggle
 
 ---
 
