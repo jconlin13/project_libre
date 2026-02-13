@@ -316,15 +316,18 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
             {/* Cover + Metadata */}
             <div className="flex-shrink-0 flex flex-col items-center">
               {coverUrl ? (
-                <Image
-                  src={coverUrl}
-                  alt={book.title}
-                  width={200}
-                  height={300}
-                  className="rounded-lg shadow-md object-cover"
-                />
+                <div className="relative w-[200px] flex-1 min-h-[300px] rounded-lg shadow-md overflow-hidden">
+                  <Image
+                    src={coverUrl}
+                    alt={book.title}
+                    fill
+                    className="object-cover"
+                    sizes="200px"
+                    unoptimized
+                  />
+                </div>
               ) : (
-                <div className="w-[200px] h-[300px] bg-muted rounded-lg flex items-center justify-center">
+                <div className="w-[200px] flex-1 min-h-[300px] bg-muted rounded-lg flex items-center justify-center">
                   <BookOpen className="h-12 w-12 text-muted-foreground" />
                 </div>
               )}
