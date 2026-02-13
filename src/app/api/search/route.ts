@@ -5,6 +5,7 @@ import { decrypt } from '@/lib/encryption'
 import {
   fetchAllUserBooks,
   searchBooks,
+  searchByAuthor,
   fetchCurrentlyReading,
   fetchFinishedBooks,
   fetchWantToRead,
@@ -22,6 +23,8 @@ const STATUS_LABELS: Record<number, string> = {
 // Priority order for network results: read > reading > want to read > DNF
 const STATUS_PRIORITY: Record<number, number> = { 3: 0, 2: 1, 1: 2, 5: 3 }
 
+type SearchTab = 'all' | 'books' | 'authors' | 'users'
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
@@ -31,29 +34,45 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const q = searchParams.get('q')?.trim()
+    const tab = (searchParams.get('tab') || 'all') as SearchTab
+    const perPage = parseInt(searchParams.get('perPage') || '10', 10)
 
     if (!q || q.length < 3) {
-      return NextResponse.json({ data: { myBooks: [], hardcoverResults: [], networkBooks: [] } })
+      return NextResponse.json({ data: { myBooks: [], hardcoverResults: [], authorBookResults: [], networkBooks: [], matchedUsers: [] } })
     }
 
     const qLower = q.toLowerCase()
 
     if (!user.hardcoverApiToken) {
-      return NextResponse.json({ data: { myBooks: [], hardcoverResults: [], networkBooks: [] } })
+      return NextResponse.json({ data: { myBooks: [], hardcoverResults: [], authorBookResults: [], networkBooks: [], matchedUsers: [] } })
     }
 
     const token = decrypt(user.hardcoverApiToken)
 
-    // 1. Fetch user's own books and filter client-side
+    // Build parallel API calls based on active tab
     let allMyBooks: UserBook[] = []
     let hardcoverResults: HardcoverBook[] = []
+    let authorBookResults: HardcoverBook[] = []
+
     try {
-      const results = await Promise.all([
-        fetchAllUserBooks(token),
-        searchBooks(token, q),
-      ])
-      allMyBooks = results[0]
-      hardcoverResults = results[1]
+      if (tab === 'all' || tab === 'books') {
+        const results = await Promise.all([
+          fetchAllUserBooks(token),
+          searchBooks(token, q, perPage),
+        ])
+        allMyBooks = results[0]
+        hardcoverResults = results[1]
+      }
+
+      if (tab === 'authors') {
+        // Also fetch user's books to mark which ones they already have
+        const results = await Promise.all([
+          fetchAllUserBooks(token),
+          searchByAuthor(token, q, 5),
+        ])
+        allMyBooks = results[0]
+        authorBookResults = results[1]
+      }
     } catch (err) {
       console.error('Search: Hardcover API error:', err)
       return NextResponse.json(
@@ -62,8 +81,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log(`Search "${q}": ${allMyBooks.length} user books, ${hardcoverResults.length} hardcover results`)
-
+    // Filter user's own books by query
     const myBooks = allMyBooks.filter((ub: UserBook) => {
       const title = ub.book.title?.toLowerCase() || ''
       const author = ub.book.cached_contributors?.[0]?.author?.name?.toLowerCase() || ''
@@ -76,12 +94,23 @@ export async function GET(request: NextRequest) {
       (book: HardcoverBook) => !myBookIds.has(book.id)
     )
 
-    // 2. Fetch network member books
+    // Filter out author book results that are already in myBooks
+    const filteredAuthorBooks = authorBookResults.filter(
+      (book: HardcoverBook) => !myBookIds.has(book.id)
+    )
+
+    // Network / Users search
     const networkBooks: Array<{
       book: HardcoverBook
       member: { id: string; name: string }
       statusLabel: string
       statusPriority: number
+    }> = []
+
+    const matchedUsers: Array<{
+      id: string
+      name: string
+      avatarUrl: string | null
     }> = []
 
     // Get household members
@@ -105,46 +134,61 @@ export async function GET(request: NextRequest) {
         ...new Map(householdMembers.map((hm) => [hm.userId, hm])).values(),
       ]
 
-      // For each member with a Hardcover connection, search their books
-      const memberSearches = uniqueMembers
-        .filter((hm) => hm.user.hardcoverApiToken)
-        .map(async (hm) => {
-          try {
-            const memberToken = decrypt(hm.user.hardcoverApiToken!)
-            const [reading, finished, wantToRead] = await Promise.all([
-              fetchCurrentlyReading(memberToken),
-              fetchFinishedBooks(memberToken, 100),
-              fetchWantToRead(memberToken),
-            ])
-
-            const allMemberBooks = [
-              ...reading.map((ub: UserBook) => ({ ...ub, status_id: 2 })),
-              ...finished.map((ub: UserBook) => ({ ...ub, status_id: 3 })),
-              ...wantToRead.map((ub: UserBook) => ({ ...ub, status_id: 1 })),
-            ]
-
-            // Filter member books matching the search query
-            const matches = allMemberBooks.filter((ub: UserBook) => {
-              const title = ub.book.title?.toLowerCase() || ''
-              const author = ub.book.cached_contributors?.[0]?.author?.name?.toLowerCase() || ''
-              return title.includes(qLower) || author.includes(qLower)
+      // Users tab: return members matching the query by name
+      if (tab === 'all' || tab === 'users') {
+        for (const hm of uniqueMembers) {
+          if (hm.user.name.toLowerCase().includes(qLower)) {
+            matchedUsers.push({
+              id: hm.user.id,
+              name: hm.user.name,
+              avatarUrl: hm.user.avatarUrl,
             })
-
-            for (const match of matches) {
-              networkBooks.push({
-                book: match.book,
-                member: { id: hm.user.id, name: hm.user.name },
-                statusLabel: STATUS_LABELS[match.status_id] || 'has',
-                statusPriority: STATUS_PRIORITY[match.status_id] ?? 99,
-              })
-            }
-          } catch (err) {
-            // Skip members whose tokens fail
-            console.error(`Failed to search member ${hm.user.name}:`, err)
           }
-        })
+        }
+      }
 
-      await Promise.all(memberSearches)
+      // Network book search (for All and Books tabs)
+      if (tab === 'all') {
+        const memberSearches = uniqueMembers
+          .filter((hm) => hm.user.hardcoverApiToken)
+          .map(async (hm) => {
+            try {
+              const memberToken = decrypt(hm.user.hardcoverApiToken!)
+              const [reading, finished, wantToRead] = await Promise.all([
+                fetchCurrentlyReading(memberToken),
+                fetchFinishedBooks(memberToken, 100),
+                fetchWantToRead(memberToken),
+              ])
+
+              const allMemberBooks = [
+                ...reading.map((ub: UserBook) => ({ ...ub, status_id: 2 })),
+                ...finished.map((ub: UserBook) => ({ ...ub, status_id: 3 })),
+                ...wantToRead.map((ub: UserBook) => ({ ...ub, status_id: 1 })),
+              ]
+
+              // Filter member books matching the search query
+              const matches = allMemberBooks.filter((ub: UserBook) => {
+                const title = ub.book.title?.toLowerCase() || ''
+                const author = ub.book.cached_contributors?.[0]?.author?.name?.toLowerCase() || ''
+                return title.includes(qLower) || author.includes(qLower)
+              })
+
+              for (const match of matches) {
+                networkBooks.push({
+                  book: match.book,
+                  member: { id: hm.user.id, name: hm.user.name },
+                  statusLabel: STATUS_LABELS[match.status_id] || 'has',
+                  statusPriority: STATUS_PRIORITY[match.status_id] ?? 99,
+                })
+              }
+            } catch (err) {
+              // Skip members whose tokens fail
+              console.error(`Failed to search member ${hm.user.name}:`, err)
+            }
+          })
+
+        await Promise.all(memberSearches)
+      }
     }
 
     // Sort network books by priority (read first, then reading, then want to read)
@@ -152,9 +196,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       data: {
-        myBooks,
-        hardcoverResults: filteredHardcover,
-        networkBooks,
+        myBooks: (tab === 'all' || tab === 'books') ? myBooks : [],
+        hardcoverResults: (tab === 'all' || tab === 'books') ? filteredHardcover : [],
+        authorBookResults: tab === 'authors' ? filteredAuthorBooks : [],
+        networkBooks: tab === 'all' ? networkBooks : [],
+        matchedUsers: (tab === 'all' || tab === 'users') ? matchedUsers : [],
       },
     })
   } catch (error) {

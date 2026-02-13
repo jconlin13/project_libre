@@ -201,6 +201,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
   }
 
   const author = book.cached_contributors?.[0]?.author?.name || 'Unknown Author'
+  const authorSlug = book.cached_contributors?.[0]?.author?.slug || null
   const parsedImage = typeof book.cached_image === 'string'
     ? (() => { try { return JSON.parse(book.cached_image) } catch { return null } })()
     : book.cached_image
@@ -347,7 +348,21 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
               {/* Title + Author — full width */}
               <div>
                 <h1 className="text-2xl font-bold">{book.title}</h1>
-                <p className="text-lg text-muted-foreground mt-1">by {author}</p>
+                <p className="text-lg text-muted-foreground mt-1">
+                  by{' '}
+                  {authorSlug ? (
+                    <a
+                      href={`https://hardcover.app/authors/${authorSlug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline hover:text-foreground transition-colors"
+                    >
+                      {author}
+                    </a>
+                  ) : (
+                    author
+                  )}
+                </p>
               </div>
 
               {/* Status/Rating/Progress + Action buttons side by side */}

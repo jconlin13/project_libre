@@ -212,11 +212,11 @@ export async function addBookToWantToRead(token: string, bookId: number) {
   return await hardcoverQuery(token, mutation, { book_id: bookId, status_id: 1 })
 }
 
-export async function searchBooks(token: string, searchQuery: string) {
+export async function searchBooks(token: string, searchQuery: string, perPage = 10) {
   // Step 1: Get book IDs from Typesense search
   const searchQ = `
     query Search($q: String!) {
-      search(query: $q, query_type: "books", per_page: 6, page: 1) {
+      search(query: $q, query_type: "books", per_page: ${perPage}, page: 1) {
         results
       }
     }
@@ -234,6 +234,56 @@ export async function searchBooks(token: string, searchQuery: string) {
   }`
   const booksData = await hardcoverQuery(token, booksQuery)
   return booksData?.books || []
+}
+
+export async function searchByAuthor(token: string, searchQuery: string, perPage = 5) {
+  // Step 1: Search for authors via Typesense
+  const searchQ = `
+    query Search($q: String!) {
+      search(query: $q, query_type: "authors", per_page: ${perPage}, page: 1) {
+        results
+      }
+    }
+  `
+  const searchData = await hardcoverQuery(token, searchQ, { q: searchQuery })
+  const hits = searchData?.search?.results?.hits || []
+  if (hits.length === 0) return []
+
+  // Step 2: Fetch authors with their book contributions
+  const authorIds = hits.map((hit: any) => hit.document.id)
+  const authorsQuery = `{
+    authors(where: {id: {_in: [${authorIds.join(',')}]}}) {
+      id
+      name
+      slug
+      cached_image
+      books_count
+      contributions(order_by: {book: {users_count: desc_nulls_last}}, limit: 20) {
+        book {
+          ${BOOK_FIELDS}
+        }
+      }
+    }
+  }`
+  const authorsData = await hardcoverQuery(token, authorsQuery)
+  const authors = authorsData?.authors || []
+
+  // Flatten: extract unique books from all matched authors
+  const seenBookIds = new Set<number>()
+  const books: HardcoverBook[] = []
+  for (const author of authors) {
+    for (const contribution of author.contributions || []) {
+      if (contribution.book && !seenBookIds.has(contribution.book.id)) {
+        seenBookIds.add(contribution.book.id)
+        books.push(contribution.book)
+      }
+    }
+  }
+  return books
+}
+
+export function getHardcoverAuthorUrl(slug: string): string {
+  return `https://hardcover.app/authors/${slug}`
 }
 
 export async function updateBookRating(
