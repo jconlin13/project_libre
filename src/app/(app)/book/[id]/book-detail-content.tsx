@@ -330,14 +330,18 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
               )}
             </div>
 
-            {/* Info + Action buttons side by side */}
-            <div className="flex-1 flex flex-col sm:flex-row gap-4">
-              {/* Left column: info, status, rating, progress */}
-              <div className="flex-1 space-y-4">
+            {/* Info */}
+            <div className="flex-1 space-y-4">
+              {/* Title + Author — full width */}
               <div>
                 <h1 className="text-2xl font-bold">{book.title}</h1>
                 <p className="text-lg text-muted-foreground mt-1">by {author}</p>
               </div>
+
+              {/* Status/Rating/Progress + Action buttons side by side */}
+              <div className="flex flex-col sm:flex-row gap-4">
+              {/* Left column: status, rating, progress */}
+              <div className="flex-1 space-y-4">
 
               {/* Status badge with popover to change */}
               {bookStatus && currentStatusConfig ? (
@@ -501,16 +505,8 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                   </div>
                 </div>
 
-              {/* Metadata */}
-              <div className="flex flex-wrap gap-2">
-                {book.pages && <Badge variant="secondary">{book.pages} pages</Badge>}
-                {book.release_date && (
-                  <Badge variant="secondary">
-                    Released: {new Date(book.release_date).toLocaleDateString()}
-                  </Badge>
-                )}
               </div>
-              </div>
+              {/* End left column */}
 
               {/* Action buttons — right column */}
               <div className="flex flex-col gap-2 sm:w-2/5 flex-shrink-0">
@@ -549,6 +545,18 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                     View on Amazon
                   </Button>
                 </a>
+              </div>
+              </div>
+              {/* End flex row */}
+
+              {/* Metadata */}
+              <div className="flex flex-wrap gap-2">
+                {book.pages && <Badge variant="secondary">{book.pages} pages</Badge>}
+                {book.release_date && (
+                  <Badge variant="secondary">
+                    Released: {new Date(book.release_date).toLocaleDateString()}
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
