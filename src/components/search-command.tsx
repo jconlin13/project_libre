@@ -224,12 +224,12 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
             </div>
           )}
 
-          {/* Hardcover results section */}
+          {/* Books (Hardcover catalog) section */}
           {hasHardcover && (
             <div className="px-2 py-1.5">
               <div className="px-2 py-1 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                 <Search className="h-3 w-3" />
-                Hardcover
+                Books
               </div>
               {results!.hardcoverResults.map((book) => (
                 <div
