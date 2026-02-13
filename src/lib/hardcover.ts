@@ -195,36 +195,27 @@ export async function addBookToWantToRead(token: string, bookId: number) {
 }
 
 export async function searchBooks(token: string, searchQuery: string) {
-  const query = `
+  // Step 1: Get book IDs from Typesense search
+  const searchQ = `
     query Search($q: String!) {
       search(query: $q, query_type: "books", per_page: 6, page: 1) {
         results
       }
     }
   `
-  const data = await hardcoverQuery(token, query, { q: searchQuery })
-  // search returns { results: { hits: [...] } } with Typesense format
-  const hits = data?.search?.results?.hits || []
-  if (hits.length > 0) {
-    console.log('Typesense document sample:', JSON.stringify(hits[0].document, null, 2))
-  }
-  return hits.map((hit: any) => {
-    const doc = hit.document
-    // Typesense returns image_url or image field for cover art
-    const imageUrl = doc.image_url || doc.image || doc.cached_image || null
-    return {
-      id: doc.id,
-      title: doc.title,
-      slug: doc.slug,
-      cached_image: imageUrl ? { url: imageUrl } : null,
-      cached_contributors: doc.author_names?.length
-        ? doc.author_names.map((name: string) => ({ author: { name, slug: '' } }))
-        : [],
-      pages: doc.pages,
-      release_date: doc.release_date,
-      description: doc.description,
-    } as HardcoverBook
-  })
+  const searchData = await hardcoverQuery(token, searchQ, { q: searchQuery })
+  const hits = searchData?.search?.results?.hits || []
+  if (hits.length === 0) return []
+
+  // Step 2: Batch-fetch full book data with cached_image from GraphQL
+  const bookIds = hits.map((hit: any) => hit.document.id)
+  const booksQuery = `{
+    books(where: {id: {_in: [${bookIds.join(',')}]}}) {
+      ${BOOK_FIELDS}
+    }
+  }`
+  const booksData = await hardcoverQuery(token, booksQuery)
+  return booksData?.books || []
 }
 
 export async function updateBookRating(
