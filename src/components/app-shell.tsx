@@ -13,12 +13,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Home, Heart, Settings, LogOut, Menu, Moon, Sun, Link2, MessageSquare } from 'lucide-react'
+import { Home, Heart, Settings, LogOut, Menu, Moon, Sun, Link2, MessageSquare, Search } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
 import { useFontSize } from '@/components/font-size-provider'
-import { useState } from 'react'
+import { SearchCommand } from '@/components/search-command'
+import { useState, useEffect } from 'react'
 
 const isLocalAuth = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === ''
 
@@ -43,6 +44,19 @@ export function AppShell({ children, user }: AppShellProps) {
   const { theme, setTheme } = useTheme()
   const { level: fontLevel, increase: fontIncrease, decrease: fontDecrease } = useFontSize()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+
+  // Global Cmd+K shortcut
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(true)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   async function handleSignOut() {
     if (isLocalAuth) {
@@ -121,6 +135,24 @@ export function AppShell({ children, user }: AppShellProps) {
           </div>
 
           <div className="flex items-center gap-1">
+            {/* Search trigger */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="inline-flex items-center justify-between rounded-md border border-input bg-background px-3 text-sm text-muted-foreground hover:bg-muted transition-colors"
+              style={{ height: '32px', minWidth: '150px', fontSize: '14px' }}
+            >
+              <div className="flex items-center gap-2">
+                <Search className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Search</span>
+              </div>
+              <span
+                className="hidden sm:inline-flex items-center justify-center rounded font-semibold text-muted-foreground"
+                style={{ fontSize: '10px', backgroundColor: 'var(--muted)', padding: '2px 6px', marginLeft: '12px' }}
+              >
+                &#8984;K
+              </span>
+            </button>
+
             {/* Font size toggle */}
             <div className="inline-flex items-center rounded-md border border-input bg-background" style={{ fontSize: '16px' }}>
               <button
@@ -188,6 +220,8 @@ export function AppShell({ children, user }: AppShellProps) {
       <main className="container mx-auto px-4 py-6">
         {children}
       </main>
+
+      <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
 
       <footer className="border-t mt-8">
         <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">

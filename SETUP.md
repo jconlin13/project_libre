@@ -186,14 +186,19 @@ __tests__/                      — Unit tests
 ### Phase 1 — Solo Reading View ✅
 Core functionality: dashboard with book carousels, book detail pages with status/rating/progress, Hardcover API integration, local auth, household management, recommendations.
 
-### Phase 2 — Discovery & Search
-- Global `Cmd+K` search bar for books, people, and navigation
+### Phase 2 — Discovery & Search (In Progress)
+- ✅ Global `Cmd+K` search bar — search your books, Hardcover catalog, and household network
+- ✅ Quick-add to Want to Read from search results
+- ✅ Household member book discovery in search
 - Household member reading activity feeds
 - Enhanced recommendation workflow
+- Cached member activity snapshots (reduce API calls)
 
-### Phase 3 — Mobile & Polish
+### Phase 3 — Mobile & Social
 - Mobile-responsive refinements
 - ISBN barcode scanner for quick book lookup
+- Social reading feed — see when household members finish or start books
+- "Who's read this?" on book detail pages
 - Push notifications for recommendations and activity
 
 ### Phase 4 — Goals & Stats

@@ -152,6 +152,48 @@ export async function fetchBookById(token: string, bookId: number) {
   return data?.books?.[0] || null
 }
 
+export async function fetchAllUserBooks(token: string) {
+  const query = `{
+    me {
+      user_books(order_by: {updated_at: desc}) {
+        id
+        status_id
+        rating
+        date_added
+        book {
+          ${BOOK_FIELDS}
+        }
+        user_book_reads(order_by: {started_at: desc_nulls_last}, limit: 1) {
+          id
+          progress
+          progress_pages
+          started_at
+        }
+      }
+    }
+  }`
+  const data = await hardcoverQuery(token, query)
+  return data?.me?.[0]?.user_books || []
+}
+
+export async function addBookToWantToRead(token: string, bookId: number) {
+  const mutation = `
+    mutation InsertUserBook($book_id: Int!, $status_id: Int!) {
+      insert_user_book(object: {book_id: $book_id, status_id: $status_id}) {
+        id
+        user_book {
+          id
+          status_id
+          book {
+            ${BOOK_FIELDS}
+          }
+        }
+      }
+    }
+  `
+  return await hardcoverQuery(token, mutation, { book_id: bookId, status_id: 1 })
+}
+
 export async function searchBooks(token: string, searchQuery: string) {
   const query = `{
     books(where: {title: {_ilike: "%${searchQuery.replace(/"/g, '\\"')}%"}}, limit: 10) {
