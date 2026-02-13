@@ -9,6 +9,7 @@ import { Search, Plus, Check, Loader2, BookOpen, Users, PenTool, ArrowRight } fr
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { VisuallyHidden } from 'radix-ui'
+import { type BookType, type SearchResult, getBookCover, getAuthor } from '@/lib/types'
 
 type SearchTab = 'all' | 'books' | 'authors' | 'users'
 
@@ -19,50 +20,11 @@ const TABS: { id: SearchTab; label: string }[] = [
   { id: 'users', label: 'Users' },
 ]
 
-interface BookType {
-  id: number
-  title: string
-  slug: string
-  cached_image?: { url: string } | null
-  cached_contributors?: { author: { name: string } }[]
-}
-
-interface SearchResult {
-  myBooks: Array<{
-    id: number
-    status_id: number
-    rating: number | null
-    book: BookType
-  }>
-  // TODO: Phase 3 — Recommended books from other users
-  // recommendedBooks: BookType[]
-  hardcoverResults: BookType[]
-  authorBookResults: BookType[]
-  networkBooks: Array<{
-    book: BookType
-    member: { id: string; name: string }
-    statusLabel: string
-  }>
-  matchedUsers: Array<{
-    id: string
-    name: string
-    avatarUrl: string | null
-  }>
-}
-
 const STATUS_NAMES: Record<number, string> = {
   1: 'Want to Read',
   2: 'Currently Reading',
   3: 'Read',
   5: 'Did Not Finish',
-}
-
-function getBookCover(book: { cached_image?: { url: string } | null }): string {
-  return book.cached_image?.url || '/book-placeholder.svg'
-}
-
-function getAuthor(book: { cached_contributors?: { author: { name: string } }[] }): string {
-  return book.cached_contributors?.[0]?.author?.name || 'Unknown Author'
 }
 
 interface SearchCommandProps {
@@ -80,6 +42,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
   const [addingBooks, setAddingBooks] = useState<Set<number>>(new Set())
   const [addedBooks, setAddedBooks] = useState<Set<number>>(new Set())
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const doSearch = useCallback(async (q: string, tab: SearchTab) => {
     if (q.trim().length < 3) {
@@ -87,9 +50,14 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
       setLoading(false)
       return
     }
+    // Abort any in-flight request
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setLoading(true)
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q.trim())}&tab=${tab}`)
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q.trim())}&tab=${tab}`, { signal: controller.signal })
       const data = await res.json()
       if (!res.ok) {
         console.error('Search API error:', data.error)
@@ -99,6 +67,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
       }
       setResults(data.data || null)
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
       console.error('Search failed:', err)
     } finally {
       setLoading(false)

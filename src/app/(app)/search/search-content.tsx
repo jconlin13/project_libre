@@ -10,6 +10,7 @@ import { Search, Loader2, BookOpen, Users, PenTool, Bookmark, Check } from 'luci
 import { toast } from 'sonner'
 import Image from 'next/image'
 import Link from 'next/link'
+import { type BookType, type SearchResult, getBookCover, getAuthor } from '@/lib/types'
 
 type SearchTab = 'all' | 'books' | 'authors' | 'users'
 
@@ -20,52 +21,11 @@ const TABS: { id: SearchTab; label: string; icon: typeof Search }[] = [
   { id: 'users', label: 'Users', icon: Users },
 ]
 
-interface BookType {
-  id: number
-  title: string
-  slug: string
-  cached_image?: { url: string } | null
-  cached_contributors?: { author: { name: string; slug?: string } }[]
-  pages?: number
-  release_date?: string
-}
-
-interface SearchResult {
-  myBooks: Array<{
-    id: number
-    status_id: number
-    rating: number | null
-    book: BookType
-  }>
-  // TODO: Phase 3 — Recommended books from other users
-  // recommendedBooks: BookType[]
-  hardcoverResults: BookType[]
-  authorBookResults: BookType[]
-  networkBooks: Array<{
-    book: BookType
-    member: { id: string; name: string }
-    statusLabel: string
-  }>
-  matchedUsers: Array<{
-    id: string
-    name: string
-    avatarUrl: string | null
-  }>
-}
-
 const STATUS_NAMES: Record<number, string> = {
   1: 'Want to Read',
   2: 'Currently Reading',
   3: 'Read',
   5: 'Did Not Finish',
-}
-
-function getBookCover(book: { cached_image?: { url: string } | null }): string {
-  return book.cached_image?.url || '/book-placeholder.svg'
-}
-
-function getAuthor(book: { cached_contributors?: { author: { name: string } }[] }): string {
-  return book.cached_contributors?.[0]?.author?.name || 'Unknown Author'
 }
 
 export function SearchContent({ hardcoverConnected }: { hardcoverConnected: boolean }) {
@@ -83,6 +43,7 @@ export function SearchContent({ hardcoverConnected }: { hardcoverConnected: bool
   const [addingBooks, setAddingBooks] = useState<Set<number>>(new Set())
   const [addedBooks, setAddedBooks] = useState<Set<number>>(new Set())
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const doSearch = useCallback(async (q: string, tab: SearchTab) => {
     if (q.trim().length < 3) {
@@ -90,9 +51,14 @@ export function SearchContent({ hardcoverConnected }: { hardcoverConnected: bool
       setLoading(false)
       return
     }
+    // Abort any in-flight request
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setLoading(true)
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q.trim())}&tab=${tab}&perPage=20`)
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q.trim())}&tab=${tab}&perPage=20`, { signal: controller.signal })
       const data = await res.json()
       if (!res.ok) {
         toast.error(data.error || 'Search failed')
@@ -100,7 +66,8 @@ export function SearchContent({ hardcoverConnected }: { hardcoverConnected: bool
         return
       }
       setResults(data.data || null)
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
       toast.error('Search failed')
     } finally {
       setLoading(false)

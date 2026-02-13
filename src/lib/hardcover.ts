@@ -1,5 +1,26 @@
 const HARDCOVER_API_URL = process.env.HARDCOVER_API_URL || 'https://api.hardcover.app/v1/graphql'
 
+// Rate limiter: sliding window per token, 50 req/min (safety margin below Hardcover's 60/min)
+const RATE_LIMIT = 50
+const RATE_WINDOW_MS = 60_000
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>()
+
+function checkRateLimit(token: string) {
+  const now = Date.now()
+  const key = token.slice(-8) // Use last 8 chars as key (avoid storing full token)
+  let entry = rateLimitMap.get(key)
+
+  if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
+    entry = { count: 0, windowStart: now }
+    rateLimitMap.set(key, entry)
+  }
+
+  entry.count++
+  if (entry.count > RATE_LIMIT) {
+    throw new Error(`Hardcover API rate limit reached (${RATE_LIMIT} requests/minute). Please wait a moment.`)
+  }
+}
+
 export interface HardcoverBook {
   id: number
   title: string
@@ -40,6 +61,8 @@ const BOOK_FIELDS = `
 `
 
 async function hardcoverQuery(token: string, query: string, variables?: Record<string, unknown>) {
+  checkRateLimit(token)
+
   const res = await fetch(HARDCOVER_API_URL, {
     method: 'POST',
     headers: {

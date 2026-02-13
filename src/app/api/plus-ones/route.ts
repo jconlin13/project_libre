@@ -71,16 +71,18 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'bookId required' }, { status: 400 })
     }
 
-    await prisma.plusOne.delete({
+    const result = await prisma.plusOne.deleteMany({
       where: {
-        userId_hardcoverBookId: {
-          userId: user.id,
-          hardcoverBookId,
-        }
+        userId: user.id,
+        hardcoverBookId,
       },
     })
 
-    return NextResponse.json({ success: true })
+    if (result.count === 0) {
+      return NextResponse.json({ error: 'Plus one not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ data: { deleted: true } })
   } catch (error) {
     console.error('Remove plus one error:', error)
     return NextResponse.json({ error: 'Failed to remove plus one' }, { status: 500 })

@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ success: true, username: profile.username })
+    return NextResponse.json({ data: { username: profile.username } })
   } catch (error) {
     console.error('Connect Hardcover error:', error)
     return NextResponse.json(
@@ -62,7 +62,7 @@ export async function DELETE() {
       }
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ data: { disconnected: true } })
   } catch (error) {
     console.error('Disconnect Hardcover error:', error)
     return NextResponse.json({ error: 'Failed to disconnect' }, { status: 500 })

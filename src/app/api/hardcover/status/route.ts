@@ -17,27 +17,29 @@ export async function POST(request: NextRequest) {
     }
 
     const token = decrypt(user.hardcoverApiToken)
-    const { bookId, statusId } = await request.json()
+    const { bookId, statusId, userBookId } = await request.json()
 
     if (!bookId || !VALID_STATUS_IDS.includes(statusId)) {
       return NextResponse.json({ error: 'bookId and valid statusId (1, 2, 3, 5) are required' }, { status: 400 })
     }
 
-    // Find the user_book entry for this book
-    const [reading, finished, wantToRead] = await Promise.all([
-      fetchCurrentlyReading(token),
-      fetchFinishedBooks(token, 100),
-      fetchWantToRead(token),
-    ])
-
-    const allBooks = [...reading, ...finished, ...wantToRead]
-    const userBook = allBooks.find((ub: any) => ub.book.id === bookId)
-
-    if (!userBook) {
-      return NextResponse.json({ error: 'Book not found in your library' }, { status: 404 })
+    // Fast path: use userBookId directly if provided by client
+    let resolvedUserBookId = userBookId
+    if (!resolvedUserBookId) {
+      const [reading, finished, wantToRead] = await Promise.all([
+        fetchCurrentlyReading(token),
+        fetchFinishedBooks(token, 100),
+        fetchWantToRead(token),
+      ])
+      const allBooks = [...reading, ...finished, ...wantToRead]
+      const userBook = allBooks.find((ub: any) => ub.book.id === bookId)
+      if (!userBook) {
+        return NextResponse.json({ error: 'Book not found in your library' }, { status: 404 })
+      }
+      resolvedUserBookId = userBook.id
     }
 
-    const result = await updateBookStatus(token, userBook.id, statusId)
+    const result = await updateBookStatus(token, resolvedUserBookId, statusId)
     return NextResponse.json({ data: result })
   } catch (error) {
     console.error('Status update error:', error)

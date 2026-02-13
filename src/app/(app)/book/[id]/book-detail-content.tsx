@@ -45,6 +45,10 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
+  // User book identity for fast-path API calls (avoids 3-fetch pattern)
+  const [userBookIdState, setUserBookIdState] = useState<number | null>(null)
+  const [readIdState, setReadIdState] = useState<number | null>(null)
+
   // Progress tracker state
   const [progressMode, setProgressMode] = useState<'percent' | 'pages'>('percent')
   const [editingProgress, setEditingProgress] = useState(false)
@@ -81,6 +85,11 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
         const userBookMatch = allUserBooks.find((ub: any) => String(ub.book.id) === bookId)
 
         if (userBookMatch) {
+          // Store user_book ID for fast-path API calls
+          setUserBookIdState(userBookMatch.id)
+          const firstRead = userBookMatch.user_book_reads?.[0]
+          if (firstRead?.id) setReadIdState(firstRead.id)
+
           // Set status
           if (userBookMatch.status_id) {
             setBookStatus(userBookMatch.status_id)
@@ -220,7 +229,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
       const res = await fetch('/api/hardcover/rating', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookId: Number(bookId), rating: newRating }),
+        body: JSON.stringify({ bookId: Number(bookId), rating: newRating, userBookId: userBookIdState }),
       })
       if (res.ok) {
         toast.success(newRating === 0 ? 'Rating cleared' : `Rated ${Number.isInteger(newRating) ? newRating : newRating.toFixed(1)}/5`)
@@ -243,7 +252,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
       const res = await fetch('/api/hardcover/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookId: Number(bookId), statusId: newStatusId }),
+        body: JSON.stringify({ bookId: Number(bookId), statusId: newStatusId, userBookId: userBookIdState }),
       })
       if (res.ok) {
         const config = STATUS_CONFIG[newStatusId]
@@ -264,7 +273,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
     if (isNaN(val) || val < 0 || !progressInput) return
     setSavingProgress(true)
     try {
-      const body: Record<string, unknown> = { bookId: Number(bookId) }
+      const body: Record<string, unknown> = { bookId: Number(bookId), userBookId: userBookIdState, readId: readIdState }
       if (progressMode === 'pages') {
         body.progressPages = val
       } else {

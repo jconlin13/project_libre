@@ -29,10 +29,10 @@ export async function POST(request: NextRequest) {
     }
 
     // When an email service is configured (e.g. Resend, SendGrid),
-    // send the feedback email here. For now, log and return success.
-    console.log(`[Feedback] ${type} from ${user.name} (${user.email}):`, details)
+    // send the feedback email here. For now, store in DB or send via email.
+    // Note: User feedback content is not logged to avoid exposing sensitive info.
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ data: { received: true } })
   } catch (error) {
     console.error('Feedback error:', error)
     return NextResponse.json(

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     const token = decrypt(user.hardcoverApiToken)
     const body = await request.json()
-    const { bookId, progress, progressPages } = body
+    const { bookId, progress, progressPages, userBookId, readId } = body
 
     if (!bookId) {
       return NextResponse.json({ error: 'bookId is required' }, { status: 400 })
@@ -26,20 +26,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'progress or progressPages is required' }, { status: 400 })
     }
 
-    // Find the user_book entry and existing read for this book
-    const reading = await fetchCurrentlyReading(token)
-    const userBook = reading.find((ub: any) => ub.book.id === bookId)
-
-    if (!userBook) {
-      return NextResponse.json({ error: 'Book not found in currently reading list' }, { status: 404 })
+    // Fast path: use userBookId and readId directly if provided by client
+    let resolvedUserBookId = userBookId
+    let resolvedReadId = readId ?? null
+    if (!resolvedUserBookId) {
+      const reading = await fetchCurrentlyReading(token)
+      const userBook = reading.find((ub: any) => ub.book.id === bookId)
+      if (!userBook) {
+        return NextResponse.json({ error: 'Book not found in currently reading list' }, { status: 404 })
+      }
+      resolvedUserBookId = userBook.id
+      resolvedReadId = userBook.user_book_reads?.[0]?.id || null
     }
-
-    const existingRead = userBook.user_book_reads?.[0]
 
     const result = await updateReadingProgress(
       token,
-      userBook.id,
-      existingRead?.id || null,
+      resolvedUserBookId,
+      resolvedReadId,
       progress ?? undefined,
       progressPages ?? undefined,
     )

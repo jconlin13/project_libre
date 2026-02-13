@@ -36,7 +36,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
       })
       const data = await res.json()
       if (res.ok) {
-        toast.success(`Connected as @${data.username}`)
+        toast.success(`Connected as @${data.data?.username || data.username}`)
         window.location.reload()
       } else {
         toast.error(data.error || 'Failed to connect')

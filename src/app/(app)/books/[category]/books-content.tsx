@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { LayoutGrid, List, Heart, ThumbsUp, BookOpen, CheckCircle, Clock, XCircle, Library } from 'lucide-react'
+import { getAuthor as getAuthorName } from '@/lib/types'
 
 interface Book {
   id: number
@@ -53,7 +54,7 @@ function getCoverUrl(book: Book): string | null {
 }
 
 function getAuthor(book: Book): string {
-  return book.cached_contributors?.[0]?.author?.name || 'Unknown Author'
+  return getAuthorName(book)
 }
 
 function formatDate(dateStr?: string | null): string | null {

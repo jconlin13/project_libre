@@ -189,7 +189,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
       })
       const data = await res.json()
       if (res.ok) {
-        toast.success(`Joined "${data.householdName}"!`)
+        toast.success(`Joined "${data.data?.householdName || data.householdName}"!`)
         setJoinDialogOpen(false)
         window.location.reload()
       } else {

@@ -33,9 +33,14 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const q = searchParams.get('q')?.trim()
-    const tab = (searchParams.get('tab') || 'all') as SearchTab
-    const perPage = parseInt(searchParams.get('perPage') || '10', 10)
+    const q = (searchParams.get('q')?.trim() || '').slice(0, 200)
+    const rawTab = searchParams.get('tab') || 'all'
+    const validTabs: SearchTab[] = ['all', 'books', 'authors', 'users']
+    if (!validTabs.includes(rawTab as SearchTab)) {
+      return NextResponse.json({ error: `Invalid tab: ${rawTab}` }, { status: 400 })
+    }
+    const tab = rawTab as SearchTab
+    const perPage = Math.min(Math.max(parseInt(searchParams.get('perPage') || '10', 10) || 10, 1), 50)
 
     if (!q || q.length < 3) {
       return NextResponse.json({ data: { myBooks: [], hardcoverResults: [], authorBookResults: [], networkBooks: [], matchedUsers: [] } })
