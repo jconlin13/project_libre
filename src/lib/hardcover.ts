@@ -197,7 +197,7 @@ export async function addBookToWantToRead(token: string, bookId: number) {
 export async function searchBooks(token: string, searchQuery: string) {
   const query = `
     query Search($q: String!) {
-      search(query: $q, query_type: "books", per_page: 10, page: 1) {
+      search(query: $q, query_type: "books", per_page: 6, page: 1) {
         results
       }
     }

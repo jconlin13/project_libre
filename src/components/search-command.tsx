@@ -183,7 +183,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
         </div>
 
         {/* Results */}
-        <div className="max-h-80 overflow-y-auto">
+        <div className="overflow-y-auto" style={{ maxHeight: '60vh' }}>
           {query.trim().length >= 3 && !loading && !hasAnyResults && (
             <div className="py-8 text-center text-sm text-muted-foreground">
               No results found
