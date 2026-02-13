@@ -139,7 +139,7 @@ export function AppShell({ children, user }: AppShellProps) {
             <button
               onClick={() => setSearchOpen(true)}
               className="inline-flex items-center justify-between rounded-md border border-input bg-background text-foreground/60 hover:bg-muted transition-colors"
-              style={{ height: '32px', minWidth: '150px', fontSize: '14px', padding: '0 12px' }}
+              style={{ height: '36px', minWidth: '150px', fontSize: '14px', padding: '0 12px' }}
             >
               <div className="flex items-center gap-2">
                 <Search className="h-3.5 w-3.5" />
