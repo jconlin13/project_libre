@@ -202,7 +202,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
               {results!.myBooks.map((ub) => (
                 <button
                   key={`my-${ub.book.id}`}
-                  className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left hover:bg-muted transition-colors"
+                  className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left hover:bg-muted transition-colors cursor-pointer"
                   onClick={() => navigateTo(`/book/${ub.book.id}`)}
                 >
                   <Image
@@ -239,7 +239,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                   className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted transition-colors"
                 >
                   <button
-                    className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                    className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer"
                     onClick={() => navigateTo(`/book/${book.id}`)}
                   >
                     <Image
@@ -268,7 +268,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                         handleAddBook(book.id)
                       }}
                       disabled={addingBooks.has(book.id)}
-                      className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors shrink-0 disabled:opacity-50"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors shrink-0 disabled:opacity-50 cursor-pointer"
                     >
                       {addingBooks.has(book.id) ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -293,7 +293,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
               {results!.networkBooks.map((nb, i) => (
                 <button
                   key={`net-${nb.book.id}-${nb.member.id}-${i}`}
-                  className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left hover:bg-muted transition-colors"
+                  className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left hover:bg-muted transition-colors cursor-pointer"
                   onClick={() => navigateTo(`/person/${nb.member.id}`)}
                 >
                   <Image

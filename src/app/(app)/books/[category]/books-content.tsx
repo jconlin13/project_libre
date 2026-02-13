@@ -234,14 +234,14 @@ export function BooksContent({ category, hardcoverConnected }: { category: strin
         <div className="flex items-center border rounded-md overflow-hidden flex-shrink-0">
           <button
             onClick={() => setViewMode('card')}
-            className={`p-1.5 transition-colors ${viewMode === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+            className={`p-1.5 transition-colors cursor-pointer ${viewMode === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
             title="Card view"
           >
             <List className="h-4 w-4" />
           </button>
           <button
             onClick={() => setViewMode('shelf')}
-            className={`p-1.5 transition-colors ${viewMode === 'shelf' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+            className={`p-1.5 transition-colors cursor-pointer ${viewMode === 'shelf' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
             title="Shelf view"
           >
             <LayoutGrid className="h-4 w-4" />

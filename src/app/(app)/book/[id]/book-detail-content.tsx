@@ -384,7 +384,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                           <button
                             key={id}
                             onClick={() => handleStatusChange(statusId)}
-                            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:bg-muted"
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:bg-muted cursor-pointer"
                             style={isActive ? {
                               color: config.textColor,
                               backgroundColor: config.bgColor,
@@ -429,7 +429,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                   {userRating > 0 && (
                     <button
                       onClick={() => handleRating(0)}
-                      className="text-[11px] text-muted-foreground hover:text-foreground mt-1 block"
+                      className="text-[11px] text-muted-foreground hover:text-foreground mt-1 block cursor-pointer"
                     >
                       Clear rating
                     </button>
@@ -444,13 +444,13 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                       </span>
                       <div className="flex items-center gap-1">
                         <button
-                          className={`text-[11px] px-2 py-0.5 rounded transition-colors ${progressMode === 'percent' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
+                          className={`text-[11px] px-2 py-0.5 rounded transition-colors cursor-pointer ${progressMode === 'percent' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
                           onClick={() => setProgressMode('percent')}
                         >
                           %
                         </button>
                         <button
-                          className={`text-[11px] px-2 py-0.5 rounded transition-colors ${progressMode === 'pages' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
+                          className={`text-[11px] px-2 py-0.5 rounded transition-colors cursor-pointer ${progressMode === 'pages' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
                           onClick={() => setProgressMode('pages')}
                         >
                           Pages
@@ -480,7 +480,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                           setEditingProgress(!editingProgress)
                           setProgressInput('')
                         }}
-                        className="h-6 text-[11px] px-3"
+                        className="h-6 text-[11px] px-3 cursor-pointer"
                       >
                         {editingProgress ? 'Cancel' : 'Update'}
                       </Button>
@@ -507,7 +507,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                         <Button
                           onClick={handleProgressSave}
                           size="sm"
-                          className="h-8 text-xs"
+                          className="h-8 text-xs cursor-pointer"
                           disabled={savingProgress}
                         >
                           {savingProgress ? 'Saving...' : 'Save'}

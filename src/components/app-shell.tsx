@@ -138,7 +138,7 @@ export function AppShell({ children, user }: AppShellProps) {
             {/* Search trigger */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="inline-flex items-center justify-between rounded-md border border-input bg-background text-foreground/60 hover:bg-muted transition-colors"
+              className="inline-flex items-center justify-between rounded-md border border-input bg-background text-foreground/60 hover:bg-muted transition-colors cursor-pointer"
               style={{ height: '36px', minWidth: '150px', fontSize: '14px', padding: '0 12px' }}
             >
               <div className="flex items-center gap-2">
@@ -158,7 +158,7 @@ export function AppShell({ children, user }: AppShellProps) {
               <button
                 onClick={fontDecrease}
                 disabled={fontLevel <= -3}
-                className="inline-flex items-center justify-center rounded-l-md font-medium hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                className="inline-flex items-center justify-center rounded-l-md font-medium hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
                 style={{ width: '32px', height: '32px' }}
                 title="Decrease text size"
               >
@@ -168,7 +168,7 @@ export function AppShell({ children, user }: AppShellProps) {
               <button
                 onClick={fontIncrease}
                 disabled={fontLevel >= 5}
-                className="inline-flex items-center justify-center rounded-r-md font-medium hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                className="inline-flex items-center justify-center rounded-r-md font-medium hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
                 style={{ width: '32px', height: '32px' }}
                 title="Increase text size"
               >
@@ -232,7 +232,7 @@ export function AppShell({ children, user }: AppShellProps) {
                 navigator.clipboard.writeText(window.location.origin)
                 toast.success('Referral link copied!')
               }}
-              className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 hover:text-foreground transition-colors cursor-pointer"
             >
               <Link2 className="h-3.5 w-3.5" />
               Copy referral link

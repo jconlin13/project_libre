@@ -151,7 +151,7 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
             <PopoverTrigger asChild>
               <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPopoverOpen(true) }}
-                className="mt-1.5 flex items-center gap-0.5 text-[11px] text-primary border border-primary/40 rounded-md px-2 py-0.5 hover:bg-primary/5 hover:border-primary/60 transition-colors font-medium"
+                className="mt-1.5 flex items-center gap-0.5 text-[11px] text-primary border border-primary/40 rounded-md px-2 py-0.5 hover:bg-primary/5 hover:border-primary/60 transition-colors font-medium cursor-pointer"
               >
                 Update Progress
                 <ChevronRight className="h-3 w-3" />
@@ -167,13 +167,13 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
                 <p className="text-xs font-medium line-clamp-1">{book.title}</p>
                 <div className="flex gap-1">
                   <button
-                    className={`text-[10px] px-2 py-0.5 rounded ${progressMode === 'pages' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+                    className={`text-[10px] px-2 py-0.5 rounded cursor-pointer ${progressMode === 'pages' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
                     onClick={() => { setProgressMode('pages'); setProgressValue('') }}
                   >
                     Pages
                   </button>
                   <button
-                    className={`text-[10px] px-2 py-0.5 rounded ${progressMode === 'percent' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+                    className={`text-[10px] px-2 py-0.5 rounded cursor-pointer ${progressMode === 'percent' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
                     onClick={() => { setProgressMode('percent'); setProgressValue('') }}
                   >
                     Percent
@@ -196,7 +196,7 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
                     className="h-7 text-xs mt-1"
                   />
                 </div>
-                <Button onClick={handleSave} size="sm" className="w-full h-7 text-xs" disabled={saving}>
+                <Button onClick={handleSave} size="sm" className="w-full h-7 text-xs cursor-pointer" disabled={saving}>
                   {saving ? 'Saving...' : 'Save'}
                 </Button>
               </div>

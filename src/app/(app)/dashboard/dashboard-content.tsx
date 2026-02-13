@@ -238,7 +238,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
         <div className="flex-shrink-0 flex items-center" style={{ height: '180px' }}>
           <button
             onClick={() => scrollBy('left')}
-            className={`flex items-center justify-center rounded-full bg-background/90 border shadow-md hover:bg-muted transition-all ${canScrollLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            className={`flex items-center justify-center rounded-full bg-background/90 border shadow-md hover:bg-muted transition-all cursor-pointer ${canScrollLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
             style={{ width: '42px', height: '42px' }}
             aria-label="Scroll left"
           >
@@ -257,7 +257,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
         <div className="flex-shrink-0 flex items-center" style={{ height: '180px' }}>
           <button
             onClick={() => scrollBy('right')}
-            className={`flex items-center justify-center rounded-full bg-background/90 border shadow-md hover:bg-muted transition-all ${canScrollRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            className={`flex items-center justify-center rounded-full bg-background/90 border shadow-md hover:bg-muted transition-all cursor-pointer ${canScrollRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
             style={{ width: '42px', height: '42px' }}
             aria-label="Scroll right"
           >
@@ -288,7 +288,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors cursor-pointer ${
                   activeTab === tab.id
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
