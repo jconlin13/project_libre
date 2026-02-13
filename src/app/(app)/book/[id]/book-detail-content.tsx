@@ -330,9 +330,9 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
               )}
               {/* Metadata badges centered under cover, single line */}
               <div className="flex justify-center gap-2 mt-3">
-                {book.pages && <Badge variant="secondary">{book.pages} pages</Badge>}
+                {book.pages && <Badge variant="secondary" className="text-[11px]">{book.pages} pages</Badge>}
                 {book.release_date && (
-                  <Badge variant="secondary">
+                  <Badge variant="secondary" className="text-[11px]">
                     Released: {new Date(book.release_date).toLocaleDateString()}
                   </Badge>
                 )}
