@@ -328,8 +328,8 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                   <BookOpen className="h-12 w-12 text-muted-foreground" />
                 </div>
               )}
-              {/* Metadata badges centered under cover */}
-              <div className="flex flex-wrap justify-center gap-2 mt-3 w-[200px]">
+              {/* Metadata badges centered under cover, single line */}
+              <div className="flex justify-center gap-2 mt-3">
                 {book.pages && <Badge variant="secondary">{book.pages} pages</Badge>}
                 {book.release_date && (
                   <Badge variant="secondary">
