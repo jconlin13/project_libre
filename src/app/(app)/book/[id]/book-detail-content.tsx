@@ -314,9 +314,9 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
           {/* Top section: Cover + Info side by side */}
           <div className="flex flex-col md:flex-row gap-8">
             {/* Cover + Metadata */}
-            <div className="flex-shrink-0 flex flex-col items-center">
+            <div className="flex-shrink-0 flex flex-col items-center self-start">
               {coverUrl ? (
-                <div className="relative w-[200px] flex-1 min-h-[300px] rounded-lg shadow-md overflow-hidden">
+                <div className="relative w-[200px] rounded-lg shadow-md overflow-hidden" style={{ aspectRatio: '2/3' }}>
                   <Image
                     src={coverUrl}
                     alt={book.title}
@@ -327,7 +327,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                   />
                 </div>
               ) : (
-                <div className="w-[200px] flex-1 min-h-[300px] bg-muted rounded-lg flex items-center justify-center">
+                <div className="w-[200px] bg-muted rounded-lg flex items-center justify-center" style={{ aspectRatio: '2/3' }}>
                   <BookOpen className="h-12 w-12 text-muted-foreground" />
                 </div>
               )}
