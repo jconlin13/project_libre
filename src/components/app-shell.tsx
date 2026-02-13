@@ -146,7 +146,7 @@ export function AppShell({ children, user }: AppShellProps) {
                 <span className="hidden sm:inline">Search</span>
               </div>
               <kbd
-                className="hidden sm:inline-flex items-center rounded border border-border bg-muted text-muted-foreground"
+                className="inline-flex items-center rounded border border-border bg-muted text-muted-foreground"
                 style={{ fontSize: '11px', padding: '1px 5px', marginLeft: '12px' }}
               >
                 &#8984;K
