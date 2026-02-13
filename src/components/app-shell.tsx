@@ -138,19 +138,19 @@ export function AppShell({ children, user }: AppShellProps) {
             {/* Search trigger */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="inline-flex items-center justify-between rounded-md border border-input bg-background px-3 text-sm text-muted-foreground hover:bg-muted transition-colors"
+              className="inline-flex items-center justify-between rounded-md border border-input bg-background px-3 text-muted-foreground hover:bg-muted transition-colors"
               style={{ height: '32px', minWidth: '150px', fontSize: '14px' }}
             >
               <div className="flex items-center gap-2">
                 <Search className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Search</span>
               </div>
-              <span
-                className="hidden sm:inline-flex items-center justify-center rounded font-semibold text-muted-foreground"
-                style={{ fontSize: '10px', backgroundColor: 'var(--muted)', padding: '2px 6px', marginLeft: '12px' }}
+              <kbd
+                className="hidden sm:inline-flex items-center rounded border border-border bg-muted text-muted-foreground"
+                style={{ fontSize: '11px', padding: '1px 5px', marginLeft: '12px' }}
               >
                 &#8984;K
-              </span>
+              </kbd>
             </button>
 
             {/* Font size toggle */}

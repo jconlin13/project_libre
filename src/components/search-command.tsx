@@ -179,7 +179,16 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
             onChange={(e) => setQuery(e.target.value)}
             className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-11"
           />
-          {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />}
+          {loading ? (
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+          ) : query.length === 0 ? (
+            <kbd
+              className="shrink-0 inline-flex items-center rounded border border-border bg-muted text-muted-foreground"
+              style={{ fontSize: '11px', padding: '1px 5px' }}
+            >
+              &#8984;K
+            </kbd>
+          ) : null}
         </div>
 
         {/* Results */}
