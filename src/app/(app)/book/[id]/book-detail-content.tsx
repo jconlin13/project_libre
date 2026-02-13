@@ -321,7 +321,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                     src={coverUrl}
                     alt={book.title}
                     fill
-                    className="object-cover"
+                    className="object-contain object-top"
                     sizes="200px"
                     unoptimized
                   />
