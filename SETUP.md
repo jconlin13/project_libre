@@ -68,7 +68,7 @@ The original spec called for several hosted services. Each was replaced with a l
 | Original Spec | Local Substitute | Why Equivalent |
 |---|---|---|
 | **Supabase Postgres** (hosted database) | **SQLite** via Prisma | Same ORM, same schema, same queries. SQLite runs as a local file with zero setup. Switch back by changing `provider` in `prisma/schema.prisma` and updating `DATABASE_URL`. |
-| **Supabase Auth** (Google OAuth, magic links) | **Cookie-based sessions** | Same outcome: identify the logged-in user on each request. Local mode sets a session cookie with the user ID. No passwords, no external auth provider needed. Supabase auth code is preserved and activates when `NEXT_PUBLIC_SUPABASE_URL` is set. |
+| **Supabase Auth** (Google OAuth, magic links) | **Cookie-based sessions** | Same outcome: identify the logged-in user on each request. Local mode sets a session cookie with the user ID. No passwords, no external auth provider needed. Supabase auth code is preserved in `src/lib/supabase/` and can be reactivated by setting `NEXT_PUBLIC_SUPABASE_URL` and updating the middleware. |
 | **Vercel** (cloud hosting) | **Local Next.js dev server** | `next dev` serves the same app locally. For production, `next build && next start` works on any machine. |
 | **Vercel deployment pipeline** | **Git + local build** | `git commit` for versioning, `npm run build` to verify. No CI/CD needed for local use. |
 
@@ -153,6 +153,7 @@ src/
     star-rating.tsx             — Shared half-star rating component (left/right half-click detection)
     font-size-provider.tsx      — Global text size scaling context (localStorage persistence)
     loading-skeleton.tsx        — Loading state placeholders
+    icons/                      — Custom SVG icon components (Amazon, Libby, Hardcover)
     ui/                         — shadcn/ui components
   lib/
     auth.ts                     — Dual-mode auth (local + Supabase)
@@ -176,19 +177,50 @@ __tests__/                      — Unit tests
 - **Half-star ratings** (0.5 increments) with visual half-filled stars on hover and display, plus "Clear rating" to reset
 - **Progress tracker** toggleable between percentage and page count, synced with Hardcover
 - **Activity log** showing bold user name before each action (e.g., "**Jack** rated 4.5/5")
-- **External links** to Amazon, Libby, and Hardcover
+- **External links** with custom-styled buttons: Libby (maroon), Hardcover (indigo with rotated book icon), Amazon (gold) — each with hover darkening
 
 ### Dashboard (`/dashboard`)
 - **Arrow-based carousel navigation** with `<` `>` buttons flanking each book row (no scrollbar)
-- **Vertically aligned card elements** — ratings, progress bars, and update buttons align across cards regardless of title length
+- **Progress overlay** on cover art — dark grey bar at bottom of each book cover with centered percentage text
+- **Vertically aligned card elements** — ratings and update buttons align across cards regardless of title length
 - **Tab navigation** (My Books, Activity, Recommendations, Goals, Stats)
 - **Count badges** with fixed pixel sizing (don't scale with font size)
 
 ### Global
 - **Custom logo** (Celtic tree of life SVG) in header
 - **Font size scaling** (`A|A` toggle) — 10% per level, up to 150%, persisted in localStorage, with keyboard shortcuts (Cmd+/Cmd-/Cmd+0)
+- **Forest green primary color** (RGB 46, 67, 46) matching the logo, used for all active/selected elements
 - **Dark/light theme** toggle
 - **Responsive header** with mobile hamburger menu
+
+---
+
+## Roadmap
+
+### Phase 1 — Solo Reading View ✅
+Core functionality: dashboard with book carousels, book detail pages with status/rating/progress, Hardcover API integration, local auth, household management, recommendations.
+
+### Phase 2 — Discovery & Search
+- Global `Cmd+K` search bar for books, people, and navigation
+- Household member reading activity feeds
+- Enhanced recommendation workflow
+
+### Phase 3 — Mobile & Polish
+- Mobile-responsive refinements
+- ISBN barcode scanner for quick book lookup
+- Push notifications for recommendations and activity
+
+### Phase 4 — Goals & Stats
+- Reading goals (books per year, pages per month)
+- Stats dashboard (genres, pace, streaks)
+- Libby availability checker
+- Notification preferences
+
+### Production Migration
+- Deploy to Vercel
+- Switch from SQLite to Supabase PostgreSQL
+- Enable Supabase Auth (Google OAuth)
+- Configure `FEEDBACK_EMAIL` env var for feedback form delivery
 
 ---
 
