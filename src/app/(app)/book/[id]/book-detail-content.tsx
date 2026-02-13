@@ -524,7 +524,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
               <div className="flex flex-col gap-2 sm:w-2/5 flex-shrink-0">
                 <a href={libbyUrl} target="_blank" rel="noopener noreferrer">
                   <Button
-                    className="w-full justify-center gap-2 text-white transition-shadow hover:shadow-lg"
+                    className="w-full justify-center gap-2 text-white transition-shadow hover:shadow-lg cursor-pointer"
                     style={{ backgroundColor: 'rgb(93, 33, 55)' }}
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(73, 23, 42)')}
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgb(93, 33, 55)')}
@@ -536,7 +536,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                 {hardcoverUrl && (
                   <a href={hardcoverUrl} target="_blank" rel="noopener noreferrer">
                     <Button
-                      className="w-full justify-center gap-2 text-white transition-shadow hover:shadow-lg"
+                      className="w-full justify-center gap-2 text-white transition-shadow hover:shadow-lg cursor-pointer"
                       style={{ backgroundColor: 'rgb(49, 46, 124)' }}
                       onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(35, 33, 98)')}
                       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgb(49, 46, 124)')}
@@ -548,7 +548,7 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                 )}
                 <a href={amazonUrl} target="_blank" rel="noopener noreferrer">
                   <Button
-                    className="w-full justify-center gap-2 text-black transition-shadow hover:shadow-lg"
+                    className="w-full justify-center gap-2 text-black transition-shadow hover:shadow-lg cursor-pointer"
                     style={{ backgroundColor: 'rgb(244, 192, 118)' }}
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(224, 170, 90)')}
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgb(244, 192, 118)')}
