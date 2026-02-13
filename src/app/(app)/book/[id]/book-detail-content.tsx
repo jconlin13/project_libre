@@ -330,8 +330,10 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
               )}
             </div>
 
-            {/* Info */}
-            <div className="flex-1 space-y-4">
+            {/* Info + Action buttons side by side */}
+            <div className="flex-1 flex flex-col sm:flex-row gap-4">
+              {/* Left column: info, status, rating, progress */}
+              <div className="flex-1 space-y-4">
               <div>
                 <h1 className="text-2xl font-bold">{book.title}</h1>
                 <p className="text-lg text-muted-foreground mt-1">by {author}</p>
@@ -404,10 +406,8 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                 </div>
               )}
 
-              {/* Rating + Progress + Action buttons — side by side */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                {/* Rating + Progress stacked */}
-                <div className="flex-1">
+              {/* Rating + Progress */}
+              <div>
                   <p className="text-sm text-muted-foreground mb-1">Your Rating</p>
                   <StarRating rating={userRating} onRate={handleRating} size="lg" />
                   {userRating > 0 && (
@@ -419,8 +419,8 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                     </button>
                   )}
 
-                  {/* Your Progress — below rating, same column width */}
-                  <div className="space-y-2 mt-4">
+                  {/* Your Progress — below rating */}
+                  <div className="space-y-2 mt-4" style={{ maxWidth: '75%' }}>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium flex items-center gap-1">
                         <BookOpen className="h-4 w-4" />
@@ -501,46 +501,6 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                   </div>
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex flex-col gap-2 sm:w-2/5 flex-shrink-0">
-                  <a href={libbyUrl} target="_blank" rel="noopener noreferrer">
-                    <Button
-                      className="w-full justify-center gap-2 text-white transition-shadow hover:shadow-lg"
-                      style={{ backgroundColor: 'rgb(93, 33, 55)' }}
-                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(73, 23, 42)')}
-                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgb(93, 33, 55)')}
-                    >
-                      <LibbyIcon className="h-5 w-5" />
-                      Search on Libby
-                    </Button>
-                  </a>
-                  {hardcoverUrl && (
-                    <a href={hardcoverUrl} target="_blank" rel="noopener noreferrer">
-                      <Button
-                        className="w-full justify-center gap-2 text-white transition-shadow hover:shadow-lg"
-                        style={{ backgroundColor: 'rgb(49, 46, 124)' }}
-                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(35, 33, 98)')}
-                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgb(49, 46, 124)')}
-                      >
-                        <HardcoverIcon className="h-5 w-5" />
-                        View on Hardcover
-                      </Button>
-                    </a>
-                  )}
-                  <a href={amazonUrl} target="_blank" rel="noopener noreferrer">
-                    <Button
-                      className="w-full justify-center gap-2 text-black transition-shadow hover:shadow-lg"
-                      style={{ backgroundColor: 'rgb(244, 192, 118)' }}
-                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(224, 170, 90)')}
-                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgb(244, 192, 118)')}
-                    >
-                      <AmazonIcon className="h-5 w-5" />
-                      View on Amazon
-                    </Button>
-                  </a>
-                </div>
-              </div>
-
               {/* Metadata */}
               <div className="flex flex-wrap gap-2">
                 {book.pages && <Badge variant="secondary">{book.pages} pages</Badge>}
@@ -549,6 +509,46 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                     Released: {new Date(book.release_date).toLocaleDateString()}
                   </Badge>
                 )}
+              </div>
+              </div>
+
+              {/* Action buttons — right column */}
+              <div className="flex flex-col gap-2 sm:w-2/5 flex-shrink-0">
+                <a href={libbyUrl} target="_blank" rel="noopener noreferrer">
+                  <Button
+                    className="w-full justify-center gap-2 text-white transition-shadow hover:shadow-lg"
+                    style={{ backgroundColor: 'rgb(93, 33, 55)' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(73, 23, 42)')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgb(93, 33, 55)')}
+                  >
+                    <LibbyIcon className="h-5 w-5" />
+                    Search on Libby
+                  </Button>
+                </a>
+                {hardcoverUrl && (
+                  <a href={hardcoverUrl} target="_blank" rel="noopener noreferrer">
+                    <Button
+                      className="w-full justify-center gap-2 text-white transition-shadow hover:shadow-lg"
+                      style={{ backgroundColor: 'rgb(49, 46, 124)' }}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(35, 33, 98)')}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgb(49, 46, 124)')}
+                    >
+                      <HardcoverIcon className="h-5 w-5" />
+                      View on Hardcover
+                    </Button>
+                  </a>
+                )}
+                <a href={amazonUrl} target="_blank" rel="noopener noreferrer">
+                  <Button
+                    className="w-full justify-center gap-2 text-black transition-shadow hover:shadow-lg"
+                    style={{ backgroundColor: 'rgb(244, 192, 118)' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgb(224, 170, 90)')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgb(244, 192, 118)')}
+                  >
+                    <AmazonIcon className="h-5 w-5" />
+                    View on Amazon
+                  </Button>
+                </a>
               </div>
             </div>
           </div>
