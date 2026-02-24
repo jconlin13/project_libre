@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Search, Loader2, BookOpen, Users, PenTool, Bookmark, Check } from 'lucide-react'
+import { Search, Loader2, BookOpen, Users, PenTool, Bookmark, Check, ThumbsUp } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -200,13 +200,12 @@ export function SearchContent({ hardcoverConnected }: { hardcoverConnected: bool
   }
 
   const hasMyBooks = results && results.myBooks.length > 0
-  // TODO: Phase 3 — Recommended books section
-  // const hasRecommended = results && results.recommendedBooks && results.recommendedBooks.length > 0
+  const hasRecommended = results && results.recommendedBooks && results.recommendedBooks.length > 0
   const hasHardcover = results && results.hardcoverResults.length > 0
   const hasAuthorBooks = results && results.authorBookResults && results.authorBookResults.length > 0
   const hasNetwork = results && results.networkBooks.length > 0
   const hasUsers = results && results.matchedUsers && results.matchedUsers.length > 0
-  const hasAnyResults = hasMyBooks || /* hasRecommended || */ hasHardcover || hasAuthorBooks || hasNetwork || hasUsers
+  const hasAnyResults = hasMyBooks || hasRecommended || hasHardcover || hasAuthorBooks || hasNetwork || hasUsers
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -295,7 +294,7 @@ export function SearchContent({ hardcoverConnected }: { hardcoverConnected: bool
         </div>
       )}
 
-      {/* TODO: Phase 3 — Recommended books section (after My Books, before catalog)
+      {/* Recommended for You section (after My Books, before catalog) */}
       {hasRecommended && (activeTab === 'all' || activeTab === 'books') && (
         <div className="space-y-3">
           <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
@@ -303,11 +302,42 @@ export function SearchContent({ hardcoverConnected }: { hardcoverConnected: bool
             Recommended for You
           </h2>
           <div className="space-y-2">
-            {results!.recommendedBooks.map((book) => renderBookCard(book, 'rec'))}
+            {results!.recommendedBooks.map((rec) => (
+              <Link href={`/book/${rec.hardcoverBookId}`} key={`rec-${rec.id}`}>
+                <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+                  <div className="flex gap-4 p-4">
+                    <div className="relative h-24 w-16 flex-shrink-0 overflow-hidden rounded-md">
+                      <Image
+                        src={rec.bookCoverUrl || '/book-placeholder.svg'}
+                        alt={rec.bookTitle || ''}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                        unoptimized
+                      />
+                    </div>
+                    <div className="flex flex-1 flex-col min-w-0">
+                      <h3 className="font-semibold truncate">{rec.bookTitle}</h3>
+                      <p className="text-sm text-muted-foreground">{rec.bookAuthor || 'Unknown Author'}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <ThumbsUp className="h-3 w-3 text-primary" />
+                        <span className="text-xs text-muted-foreground">
+                          from {rec.fromUser.name}
+                        </span>
+                      </div>
+                      {rec.note && (
+                        <p className="text-xs text-muted-foreground mt-1 italic truncate">
+                          &ldquo;{rec.note}&rdquo;
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            ))}
           </div>
         </div>
       )}
-      */}
 
       {/* Hardcover catalog section */}
       {hasHardcover && (activeTab === 'all' || activeTab === 'books') && (

@@ -16,10 +16,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
+import { RecommendDialog } from '@/components/recommend-dialog'
 
 interface BookDetailContentProps {
   bookId: string
   userName: string
+  userId: string
 }
 
 const STATUS_CONFIG: Record<number, {
@@ -35,7 +37,7 @@ const STATUS_CONFIG: Record<number, {
   5: { label: 'Did Not Finish', icon: Ban, textColor: '#b91c1c', bgColor: '#fee2e2', borderColor: '#fca5a5' },
 }
 
-export default function BookDetailContent({ bookId, userName }: BookDetailContentProps) {
+export default function BookDetailContent({ bookId, userName, userId }: BookDetailContentProps) {
   const [book, setBook] = useState<any>(null)
   const [readingProgress, setReadingProgress] = useState<{ progress: number | null; progress_pages: number | null } | null>(null)
   const [userRating, setUserRating] = useState<number>(0)
@@ -48,6 +50,10 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
   // User book identity for fast-path API calls (avoids 3-fetch pattern)
   const [userBookIdState, setUserBookIdState] = useState<number | null>(null)
   const [readIdState, setReadIdState] = useState<number | null>(null)
+
+  // Recommend dialog state
+  const [recommendDialogOpen, setRecommendDialogOpen] = useState(false)
+  const [hasRecommended, setHasRecommended] = useState(false)
 
   // Progress tracker state
   const [progressMode, setProgressMode] = useState<'percent' | 'pages'>('percent')
@@ -436,13 +442,24 @@ export default function BookDetailContent({ bookId, userName }: BookDetailConten
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-1.5 text-sm"
+                    className="gap-1.5 text-sm cursor-pointer"
                     style={{ maxWidth: '90%' }}
-                    disabled
+                    onClick={() => setRecommendDialogOpen(true)}
+                    disabled={hasRecommended}
                   >
                     <ThumbsUp className="h-4 w-4" />
-                    Recommend
+                    {hasRecommended ? 'Recommended \u2713' : 'Recommend'}
                   </Button>
+                  <RecommendDialog
+                    open={recommendDialogOpen}
+                    onOpenChange={setRecommendDialogOpen}
+                    userId={userId}
+                    bookId={bookId}
+                    bookTitle={book.title}
+                    bookAuthor={author}
+                    bookCoverUrl={coverUrl}
+                    onSuccess={() => setHasRecommended(true)}
+                  />
                 </div>
               )}
 

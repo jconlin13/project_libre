@@ -17,6 +17,17 @@ export interface BookType {
   release_date?: string
 }
 
+/** A recommendation surfaced in search results */
+export interface RecommendedBook {
+  id: string
+  hardcoverBookId: string
+  bookTitle: string | null
+  bookAuthor: string | null
+  bookCoverUrl: string | null
+  note: string | null
+  fromUser: { id: string; name: string; avatarUrl: string | null }
+}
+
 /** Search API response shape */
 export interface SearchResult {
   myBooks: Array<{
@@ -25,8 +36,7 @@ export interface SearchResult {
     rating: number | null
     book: BookType
   }>
-  // TODO: Phase 3 — Recommended books from other users
-  // recommendedBooks: BookType[]
+  recommendedBooks: RecommendedBook[]
   hardcoverResults: BookType[]
   authorBookResults: BookType[]
   networkBooks: Array<{

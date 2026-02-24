@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Search, Plus, Check, Loader2, BookOpen, Users, PenTool, ArrowRight } from 'lucide-react'
+import { Search, Plus, Check, Loader2, BookOpen, Users, PenTool, ArrowRight, ThumbsUp } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { VisuallyHidden } from 'radix-ui'
@@ -193,13 +193,12 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
   }
 
   const hasMyBooks = results && results.myBooks.length > 0
-  // TODO: Phase 3 — Recommended books section
-  // const hasRecommended = results && results.recommendedBooks && results.recommendedBooks.length > 0
+  const hasRecommended = results && results.recommendedBooks && results.recommendedBooks.length > 0
   const hasHardcover = results && results.hardcoverResults.length > 0
   const hasAuthorBooks = results && results.authorBookResults && results.authorBookResults.length > 0
   const hasNetwork = results && results.networkBooks.length > 0
   const hasUsers = results && results.matchedUsers && results.matchedUsers.length > 0
-  const hasAnyResults = hasMyBooks || /* hasRecommended || */ hasHardcover || hasAuthorBooks || hasNetwork || hasUsers
+  const hasAnyResults = hasMyBooks || hasRecommended || hasHardcover || hasAuthorBooks || hasNetwork || hasUsers
   const showTabs = query.trim().length >= 3
 
   return (
@@ -289,17 +288,39 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
             </div>
           )}
 
-          {/* TODO: Phase 3 — Recommended books section (after My Books, before catalog)
+          {/* Recommended for You section (after My Books, before catalog) */}
           {hasRecommended && (activeTab === 'all' || activeTab === 'books') && (
             <div className="px-2 py-1.5">
               <div className="px-2 py-1 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                 <ThumbsUp className="h-3 w-3" />
                 Recommended for You
               </div>
-              {results!.recommendedBooks.map((book) => renderBookRow(book, 'rec'))}
+              {results!.recommendedBooks.map((rec) => (
+                <button
+                  key={`rec-${rec.id}`}
+                  className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left hover:bg-muted transition-colors cursor-pointer"
+                  onClick={() => navigateTo(`/book/${rec.hardcoverBookId}`)}
+                >
+                  <Image
+                    src={rec.bookCoverUrl || '/book-placeholder.svg'}
+                    alt=""
+                    width={28}
+                    height={42}
+                    className="rounded object-cover shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{rec.bookTitle}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {rec.bookAuthor || 'Unknown Author'}
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground shrink-0">
+                    from {rec.fromUser.name}
+                  </span>
+                </button>
+              ))}
             </div>
           )}
-          */}
 
           {/* Hardcover catalog section (All + Books tabs) */}
           {hasHardcover && (activeTab === 'all' || activeTab === 'books') && (

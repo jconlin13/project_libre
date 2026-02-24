@@ -43,13 +43,13 @@ export async function GET(request: NextRequest) {
     const perPage = Math.min(Math.max(parseInt(searchParams.get('perPage') || '10', 10) || 10, 1), 50)
 
     if (!q || q.length < 3) {
-      return NextResponse.json({ data: { myBooks: [], hardcoverResults: [], authorBookResults: [], networkBooks: [], matchedUsers: [] } })
+      return NextResponse.json({ data: { myBooks: [], recommendedBooks: [], hardcoverResults: [], authorBookResults: [], networkBooks: [], matchedUsers: [] } })
     }
 
     const qLower = q.toLowerCase()
 
     if (!user.hardcoverApiToken) {
-      return NextResponse.json({ data: { myBooks: [], hardcoverResults: [], authorBookResults: [], networkBooks: [], matchedUsers: [] } })
+      return NextResponse.json({ data: { myBooks: [], recommendedBooks: [], hardcoverResults: [], authorBookResults: [], networkBooks: [], matchedUsers: [] } })
     }
 
     const token = decrypt(user.hardcoverApiToken)
@@ -58,8 +58,15 @@ export async function GET(request: NextRequest) {
     let allMyBooks: UserBook[] = []
     let hardcoverResults: HardcoverBook[] = []
     let authorBookResults: HardcoverBook[] = []
-    // TODO: Phase 3 — Recommended books search
-    // let recommendedBooks: HardcoverBook[] = []
+    let recommendedBooks: Array<{
+      id: string
+      hardcoverBookId: string
+      bookTitle: string | null
+      bookAuthor: string | null
+      bookCoverUrl: string | null
+      note: string | null
+      fromUser: { id: string; name: string; avatarUrl: string | null }
+    }> = []
 
     try {
       if (tab === 'all' || tab === 'books') {
@@ -81,22 +88,36 @@ export async function GET(request: NextRequest) {
         authorBookResults = results[1]
       }
 
-      // TODO: Phase 3 — Fetch recommended books matching search query
-      // When recommendations are implemented, search books that other users
-      // have recommended to the current user, filtered by query match.
-      // if (tab === 'all' || tab === 'books') {
-      //   const recommendations = await prisma.recommendation.findMany({
-      //     where: { recipientId: user.id },
-      //     include: { book: true },
-      //   })
-      //   recommendedBooks = recommendations
-      //     .map((r) => r.book)
-      //     .filter((book) => {
-      //       const title = book.title?.toLowerCase() || ''
-      //       const author = book.cached_contributors?.[0]?.author?.name?.toLowerCase() || ''
-      //       return title.includes(qLower) || author.includes(qLower)
-      //     })
-      // }
+      // Fetch pending recommendations matching search query
+      if (tab === 'all' || tab === 'books') {
+        const recommendations = await prisma.recommendation.findMany({
+          where: {
+            toUserId: user.id,
+            status: 'pending',
+          },
+          include: {
+            fromUser: {
+              select: { id: true, name: true, avatarUrl: true },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+        recommendedBooks = recommendations
+          .filter((r) => {
+            const title = r.bookTitle?.toLowerCase() || ''
+            const author = r.bookAuthor?.toLowerCase() || ''
+            return title.includes(qLower) || author.includes(qLower)
+          })
+          .map((r) => ({
+            id: r.id,
+            hardcoverBookId: r.hardcoverBookId,
+            bookTitle: r.bookTitle,
+            bookAuthor: r.bookAuthor,
+            bookCoverUrl: r.bookCoverUrl,
+            note: r.note,
+            fromUser: r.fromUser,
+          }))
+      }
     } catch (err) {
       console.error('Search: Hardcover API error:', err)
       return NextResponse.json(
@@ -225,9 +246,7 @@ export async function GET(request: NextRequest) {
         authorBookResults: tab === 'authors' ? filteredAuthorBooks : [],
         networkBooks: tab === 'all' ? networkBooks : [],
         matchedUsers: (tab === 'all' || tab === 'users') ? matchedUsers : [],
-        // TODO: Phase 3 — Recommended books matching search query
-        // Displayed after My Books, before Hardcover catalog results.
-        // recommendedBooks: (tab === 'all' || tab === 'books') ? recommendedBooks : [],
+        recommendedBooks: (tab === 'all' || tab === 'books') ? recommendedBooks : [],
       },
     })
   } catch (error) {
