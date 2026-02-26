@@ -23,6 +23,8 @@ model User {
   recommendationsReceived Recommendation[] @relation("RecommendationTo")
   plusOnes            PlusOne[]
   snapshots           Snapshot[]
+  activityEvents      ActivityEvent[]   @relation("ActivityEvents")
+  activityTargets     ActivityEvent[]   @relation("ActivityTargets")
 
   @@map("users")
 }
@@ -82,6 +84,26 @@ model PlusOne {
 
   @@unique([userId, hardcoverBookId])
   @@map("plus_ones")
+}
+
+model ActivityEvent {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  type            String   // status_change | rating | progress_update | recommendation | plus_one
+  hardcoverBookId String   @map("hardcover_book_id")
+  bookTitle       String?  @map("book_title")
+  bookAuthor      String?  @map("book_author")
+  bookCoverUrl    String?  @map("book_cover_url")
+  value           String?  // e.g. "Currently Reading", "4.5", "45%", "page 120"
+  targetUserId    String?  @map("target_user_id")
+  note            String?
+  visibility      String   @default("global") // "global" | "private"
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user            User     @relation("ActivityEvents", fields: [userId], references: [id], onDelete: Cascade)
+  targetUser      User?    @relation("ActivityTargets", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@map("activity_events")
 }
 
 model Snapshot {

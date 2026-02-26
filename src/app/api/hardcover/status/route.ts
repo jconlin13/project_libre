@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { decrypt } from '@/lib/encryption'
+import { prisma } from '@/lib/prisma'
 import { fetchCurrentlyReading, fetchFinishedBooks, fetchWantToRead, updateBookStatus } from '@/lib/hardcover'
 
 const VALID_STATUS_IDS = [1, 2, 3, 5] // 1=Want to Read, 2=Currently Reading, 3=Read, 5=Did Not Finish
+const STATUS_LABELS: Record<number, string> = {
+  1: 'Want to Read',
+  2: 'Currently Reading',
+  3: 'Read',
+  5: 'Did Not Finish',
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = decrypt(user.hardcoverApiToken)
-    const { bookId, statusId, userBookId } = await request.json()
+    const { bookId, statusId, userBookId, bookTitle, bookAuthor, bookCoverUrl } = await request.json()
 
     if (!bookId || !VALID_STATUS_IDS.includes(statusId)) {
       return NextResponse.json({ error: 'bookId and valid statusId (1, 2, 3, 5) are required' }, { status: 400 })
@@ -40,6 +47,21 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await updateBookStatus(token, resolvedUserBookId, statusId)
+
+    // Write activity event
+    await prisma.activityEvent.create({
+      data: {
+        userId: user.id,
+        type: 'status_change',
+        hardcoverBookId: String(bookId),
+        bookTitle: bookTitle || null,
+        bookAuthor: bookAuthor || null,
+        bookCoverUrl: bookCoverUrl || null,
+        value: STATUS_LABELS[statusId] || String(statusId),
+        visibility: 'global',
+      },
+    }).catch((e) => console.error('Activity event write failed:', e))
+
     return NextResponse.json({ data: result })
   } catch (error) {
     console.error('Status update error:', error)

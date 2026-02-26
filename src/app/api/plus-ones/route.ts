@@ -34,6 +34,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'hardcoverBookId required' }, { status: 400 })
     }
 
+    // Check if it already exists to avoid duplicate activity events
+    const existing = await prisma.plusOne.findUnique({
+      where: {
+        userId_hardcoverBookId: {
+          userId: user.id,
+          hardcoverBookId: String(hardcoverBookId),
+        },
+      },
+    })
+
     const plusOne = await prisma.plusOne.upsert({
       where: {
         userId_hardcoverBookId: {
@@ -50,6 +60,21 @@ export async function POST(request: NextRequest) {
         bookCoverUrl,
       },
     })
+
+    // Only write activity event for new plus-ones
+    if (!existing) {
+      await prisma.activityEvent.create({
+        data: {
+          userId: user.id,
+          type: 'plus_one',
+          hardcoverBookId: String(hardcoverBookId),
+          bookTitle: bookTitle || null,
+          bookAuthor: bookAuthor || null,
+          bookCoverUrl: bookCoverUrl || null,
+          visibility: 'global',
+        },
+      }).catch((e) => console.error('Activity event write failed:', e))
+    }
 
     return NextResponse.json({ data: plusOne })
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { decrypt } from '@/lib/encryption'
+import { prisma } from '@/lib/prisma'
 import { fetchCurrentlyReading, fetchFinishedBooks, fetchWantToRead, updateBookRating } from '@/lib/hardcover'
 
 export async function POST(request: NextRequest) {
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = decrypt(user.hardcoverApiToken)
-    const { bookId, rating, userBookId } = await request.json()
+    const { bookId, rating, userBookId, bookTitle, bookAuthor, bookCoverUrl } = await request.json()
 
     if (!bookId || rating == null || rating < 0 || rating > 5 || (rating % 0.5 !== 0)) {
       return NextResponse.json({ error: 'bookId and rating (0-5, in 0.5 increments) are required' }, { status: 400 })
@@ -39,6 +40,21 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await updateBookRating(token, resolvedUserBookId, rating)
+
+    // Write activity event
+    await prisma.activityEvent.create({
+      data: {
+        userId: user.id,
+        type: 'rating',
+        hardcoverBookId: String(bookId),
+        bookTitle: bookTitle || null,
+        bookAuthor: bookAuthor || null,
+        bookCoverUrl: bookCoverUrl || null,
+        value: rating === 0 ? 'cleared' : `${rating}`,
+        visibility: 'global',
+      },
+    }).catch((e) => console.error('Activity event write failed:', e))
+
     return NextResponse.json({ data: result })
   } catch (error) {
     console.error('Rating update error:', error)

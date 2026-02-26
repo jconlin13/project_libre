@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { decrypt } from '@/lib/encryption'
+import { prisma } from '@/lib/prisma'
 import { fetchCurrentlyReading, updateReadingProgress } from '@/lib/hardcover'
 
 export async function POST(request: NextRequest) {
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     const token = decrypt(user.hardcoverApiToken)
     const body = await request.json()
-    const { bookId, progress, progressPages, userBookId, readId } = body
+    const { bookId, progress, progressPages, userBookId, readId, bookTitle, bookAuthor, bookCoverUrl } = body
 
     if (!bookId) {
       return NextResponse.json({ error: 'bookId is required' }, { status: 400 })
@@ -46,6 +47,23 @@ export async function POST(request: NextRequest) {
       progress ?? undefined,
       progressPages ?? undefined,
     )
+
+    // Write activity event
+    const progressValue = progress != null
+      ? `${Math.min(progress, 100)}%`
+      : `page ${progressPages}`
+    await prisma.activityEvent.create({
+      data: {
+        userId: user.id,
+        type: 'progress_update',
+        hardcoverBookId: String(bookId),
+        bookTitle: bookTitle || null,
+        bookAuthor: bookAuthor || null,
+        bookCoverUrl: bookCoverUrl || null,
+        value: progressValue,
+        visibility: 'global',
+      },
+    }).catch((e) => console.error('Activity event write failed:', e))
 
     return NextResponse.json({ data: result })
   } catch (error) {

@@ -235,7 +235,7 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
       const res = await fetch('/api/hardcover/rating', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookId: Number(bookId), rating: newRating, userBookId: userBookIdState }),
+        body: JSON.stringify({ bookId: Number(bookId), rating: newRating, userBookId: userBookIdState, bookTitle: book.title, bookAuthor: author, bookCoverUrl: coverUrl }),
       })
       if (res.ok) {
         toast.success(newRating === 0 ? 'Rating cleared' : `Rated ${Number.isInteger(newRating) ? newRating : newRating.toFixed(1)}/5`)
@@ -258,7 +258,7 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
       const res = await fetch('/api/hardcover/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookId: Number(bookId), statusId: newStatusId, userBookId: userBookIdState }),
+        body: JSON.stringify({ bookId: Number(bookId), statusId: newStatusId, userBookId: userBookIdState, bookTitle: book.title, bookAuthor: author, bookCoverUrl: coverUrl }),
       })
       if (res.ok) {
         const config = STATUS_CONFIG[newStatusId]
@@ -279,7 +279,7 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
     if (isNaN(val) || val < 0 || !progressInput) return
     setSavingProgress(true)
     try {
-      const body: Record<string, unknown> = { bookId: Number(bookId), userBookId: userBookIdState, readId: readIdState }
+      const body: Record<string, unknown> = { bookId: Number(bookId), userBookId: userBookIdState, readId: readIdState, bookTitle: book.title, bookAuthor: author, bookCoverUrl: coverUrl }
       if (progressMode === 'pages') {
         body.progressPages = val
       } else {

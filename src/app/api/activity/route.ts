@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const user = await getCurrentUser()
@@ -22,57 +24,39 @@ export async function GET() {
     })
     const memberIds = [...new Set(allMembers.map(m => m.userId))]
 
-    // Fetch recent activity
-    const [recommendations, plusOnes] = await Promise.all([
-      prisma.recommendation.findMany({
-        where: {
-          OR: [
-            { fromUserId: { in: memberIds } },
-            { toUserId: { in: memberIds } },
-          ]
-        },
-        include: { fromUser: true, toUser: true },
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-      }),
-      prisma.plusOne.findMany({
-        where: { userId: { in: memberIds } },
-        include: { user: true },
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-      }),
-    ])
+    // Fetch from unified ActivityEvent table with visibility filtering:
+    // - Global events: visible to all household members
+    // - Private events: only visible to sender or recipient
+    const events = await prisma.activityEvent.findMany({
+      where: {
+        OR: [
+          { userId: { in: memberIds }, visibility: 'global' },
+          { userId: user.id, visibility: 'private' },
+          { targetUserId: user.id, visibility: 'private' },
+        ],
+      },
+      include: {
+        user: { select: { id: true, name: true, avatarUrl: true } },
+        targetUser: { select: { id: true, name: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+    })
 
-    // Merge and sort
-    const activity = [
-      ...recommendations.map(r => ({
-        type: 'recommendation' as const,
-        id: r.id,
-        user: r.fromUser,
-        targetUser: r.toUser,
-        bookTitle: r.bookTitle,
-        bookAuthor: r.bookAuthor,
-        bookCoverUrl: r.bookCoverUrl,
-        hardcoverBookId: r.hardcoverBookId,
-        note: r.note,
-        status: r.status,
-        createdAt: r.createdAt,
-      })),
-      ...plusOnes.map(p => ({
-        type: 'plus_one' as const,
-        id: p.id,
-        user: p.user,
-        targetUser: null,
-        bookTitle: p.bookTitle,
-        bookAuthor: p.bookAuthor,
-        bookCoverUrl: p.bookCoverUrl,
-        hardcoverBookId: p.hardcoverBookId,
-        note: null,
-        status: null,
-        createdAt: p.createdAt,
-      })),
-    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .slice(0, 30)
+    // Normalize to response shape
+    const activity = events.map(e => ({
+      type: e.type,
+      id: e.id,
+      user: e.user,
+      targetUser: e.targetUser,
+      bookTitle: e.bookTitle,
+      bookAuthor: e.bookAuthor,
+      bookCoverUrl: e.bookCoverUrl,
+      hardcoverBookId: e.hardcoverBookId,
+      value: e.value,
+      note: e.note,
+      createdAt: e.createdAt,
+    }))
 
     return NextResponse.json({ data: activity })
   } catch (error) {

@@ -63,6 +63,21 @@ export async function POST(request: NextRequest) {
       include: { fromUser: true, toUser: true },
     })
 
+    // Write activity event (private — only sender + recipient see it)
+    await prisma.activityEvent.create({
+      data: {
+        userId: user.id,
+        type: 'recommendation',
+        hardcoverBookId: String(hardcoverBookId),
+        bookTitle: bookTitle || null,
+        bookAuthor: bookAuthor || null,
+        bookCoverUrl: bookCoverUrl || null,
+        targetUserId: toUserId,
+        note: note || null,
+        visibility: 'private',
+      },
+    }).catch((e) => console.error('Activity event write failed:', e))
+
     return NextResponse.json({ data: recommendation })
   } catch (error) {
     console.error('Create recommendation error:', error)
