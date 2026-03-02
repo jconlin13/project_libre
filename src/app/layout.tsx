@@ -1,9 +1,16 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono, Lora } from 'next/font/google'
+import { GeistSans } from 'geist/font/sans'
+import { GeistMono } from 'geist/font/mono'
+import localFont from 'next/font/local'
 
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
-const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
-const lora = Lora({ variable: '--font-lora', subsets: ['latin'] })
+const lora = localFont({
+  src: [
+    { path: '../fonts/Lora-VariableFont.ttf', style: 'normal' },
+    { path: '../fonts/Lora-Italic-VariableFont.ttf', style: 'italic' },
+  ],
+  variable: '--font-lora',
+  display: 'swap',
+})
 import { ThemeProvider } from '@/components/theme-provider'
 import { FontSizeProvider } from '@/components/font-size-provider'
 import { Toaster } from '@/components/ui/sonner'
@@ -37,7 +44,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} font-sans antialiased`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} ${lora.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
