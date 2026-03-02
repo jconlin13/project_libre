@@ -23,6 +23,7 @@ interface BookCardProps {
     pages?: number
   }
   rating?: number | null
+  comparativeScore?: number | null
   status?: string
   progress?: number | null
   progressPages?: number | null
@@ -34,11 +35,12 @@ interface BookCardProps {
   cover?: boolean
 }
 
-function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdateProgress }: {
+function CoverCard({ book, coverUrl, author, rating, comparativeScore, progressPercent, onUpdateProgress }: {
   book: BookCardProps['book']
   coverUrl: string | null
   author: string
   rating?: number | null
+  comparativeScore?: number | null
   progressPercent: number | null
   onUpdateProgress?: () => void
 }) {
@@ -142,7 +144,11 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
       <div className="flex flex-col items-center w-full mt-auto pt-1">
         {/* Rating stars — always present */}
         <div onClick={(e) => { e.preventDefault(); e.stopPropagation() }}>
-          <StarRating rating={currentRating} onRate={handleRating} size="sm" />
+          {comparativeScore != null ? (
+            <StarRating rating={comparativeScore} size="sm" readOnly precision />
+          ) : (
+            <StarRating rating={currentRating} onRate={handleRating} size="sm" />
+          )}
         </div>
 
         {/* Update Progress button — always takes space */}
@@ -210,7 +216,7 @@ function CoverCard({ book, coverUrl, author, rating, progressPercent, onUpdatePr
   )
 }
 
-export function BookCard({ book, rating, status, progress, progressPages, showActions, onRecommend, onPlusOne, onUpdateProgress, compact, cover }: BookCardProps) {
+export function BookCard({ book, rating, comparativeScore, status, progress, progressPages, showActions, onRecommend, onPlusOne, onUpdateProgress, compact, cover }: BookCardProps) {
   const author = book.cached_contributors?.[0]?.author?.name || 'Unknown Author'
   // cached_image can be an object or a JSON string from the API
   const parsedImage = typeof book.cached_image === 'string'
@@ -235,6 +241,7 @@ export function BookCard({ book, rating, status, progress, progressPages, showAc
         coverUrl={coverUrl}
         author={author}
         rating={rating}
+        comparativeScore={comparativeScore}
         progressPercent={progressPercent}
         onUpdateProgress={onUpdateProgress}
       />
@@ -256,11 +263,15 @@ export function BookCard({ book, rating, status, progress, progressPages, showAc
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{book.title}</p>
           <p className="truncate text-xs text-muted-foreground">{author}</p>
-          {rating != null && rating > 0 && (
+          {comparativeScore != null ? (
+            <div className="mt-0.5">
+              <StarRating rating={comparativeScore} size="sm" readOnly precision />
+            </div>
+          ) : rating != null && rating > 0 ? (
             <div className="mt-0.5">
               <StarRating rating={rating} size="sm" readOnly />
             </div>
-          )}
+          ) : null}
           {progress != null && progress > 0 && (
             <div className="flex items-center gap-2 mt-1">
               <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
@@ -307,11 +318,15 @@ export function BookCard({ book, rating, status, progress, progressPages, showAc
         <div className="flex flex-1 flex-col min-w-0">
           <h3 className="font-semibold truncate">{book.title}</h3>
           <p className="text-sm text-muted-foreground">{author}</p>
-          {rating != null && rating > 0 && (
+          {comparativeScore != null ? (
+            <div className="mt-1">
+              <StarRating rating={comparativeScore} size="sm" readOnly precision />
+            </div>
+          ) : rating != null && rating > 0 ? (
             <div className="mt-1">
               <StarRating rating={rating} size="sm" readOnly />
             </div>
-          )}
+          ) : null}
           {status && (
             <Badge variant="secondary" className="mt-2 w-fit text-xs">
               {status === '2' ? 'Reading' : status === '3' ? 'Finished' : status === '1' ? 'Want to Read' : status}

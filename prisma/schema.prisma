@@ -26,6 +26,8 @@ model User {
   activityEvents      ActivityEvent[]   @relation("ActivityEvents")
   activityTargets     ActivityEvent[]   @relation("ActivityTargets")
   userBookMediaTypes  UserBookMediaType[]
+  bookRankings        BookRanking[]
+  bookComparisons     BookComparison[]
 
   @@map("users")
 }
@@ -139,4 +141,36 @@ model Snapshot {
 
   @@unique([userId, hardcoverBookId])
   @@map("snapshots")
+}
+
+model BookRanking {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  hardcoverBookId String   @map("hardcover_book_id")
+  eloScore        Float    @default(1500) @map("elo_score")
+  manualOverride  Float?   @map("manual_override")
+  comparisonCount Int      @default(0) @map("comparison_count")
+  bookTitle       String?  @map("book_title")
+  bookAuthor      String?  @map("book_author")
+  bookCoverUrl    String?  @map("book_cover_url")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, hardcoverBookId])
+  @@map("book_rankings")
+}
+
+model BookComparison {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  winnerBookId    String   @map("winner_book_id")
+  loserBookId     String   @map("loser_book_id")
+  isDraw          Boolean  @default(false) @map("is_draw")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("book_comparisons")
 }

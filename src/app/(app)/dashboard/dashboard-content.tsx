@@ -83,6 +83,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
   const [myBooks, setMyBooks] = useState<MemberBooks | null>(null)
   const [loadingMyBooks, setLoadingMyBooks] = useState(false)
   const [activeTab, setActiveTab] = useState<DashboardTab>('books')
+  const [rankings, setRankings] = useState<Map<string, number>>(new Map())
 
   const firstName = currentUser.name.split(' ')[0]
   const initials = currentUser.name
@@ -144,6 +145,20 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
         wantToRead: wantToReadData.data || [],
       })
     }).catch(console.error).finally(() => setLoadingMyBooks(false))
+
+    // Fetch comparative rankings
+    fetch('/api/rankings')
+      .then(r => r.json())
+      .then(d => {
+        if (d.data) {
+          const map = new Map<string, number>()
+          for (const r of d.data) {
+            map.set(r.hardcoverBookId, r.displayScore)
+          }
+          setRankings(map)
+        }
+      })
+      .catch(() => {})
   }, [currentUser.hardcoverConnected])
 
   useEffect(() => {
@@ -399,7 +414,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
             <BookRow>
               {myBooks.finished.map((ub: any) => (
                 <Link key={ub.id} href={`/book/${ub.book.id}`} className="block h-full">
-                  <BookCard book={ub.book} rating={ub.rating} cover />
+                  <BookCard book={ub.book} rating={ub.rating} comparativeScore={rankings.get(String(ub.book.id)) ?? null} cover />
                 </Link>
               ))}
             </BookRow>

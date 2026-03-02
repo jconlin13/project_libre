@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, CheckCircle, BookMarked, Bookmark, Ban, ChevronDown, ThumbsUp, Book, Tablet, Headphones, Users } from 'lucide-react'
+import { ArrowLeft, BookOpen, CheckCircle, BookMarked, Bookmark, Ban, ChevronDown, ThumbsUp, Book, Tablet, Headphones, Users, RotateCcw, Pencil } from 'lucide-react'
 import { AmazonIcon } from '@/components/icons/amazon-icon'
 import { LibbyIcon } from '@/components/icons/libby-icon'
 import { HardcoverIcon } from '@/components/icons/hardcover-icon'
@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { RecommendDialog } from '@/components/recommend-dialog'
+import { ComparisonDialog } from '@/components/comparison-dialog'
 
 interface BookDetailContentProps {
   bookId: string
@@ -65,6 +66,11 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
     statusId: number | null; rating: number | null; progressPct: number | null;
   }>>([])
 
+  // Comparative rating state
+  const [comparisonDialogOpen, setComparisonDialogOpen] = useState(false)
+  const [isRerank, setIsRerank] = useState(false)
+  const [comparativeScore, setComparativeScore] = useState<number | null>(null)
+  const [manualOverrideMode, setManualOverrideMode] = useState(false)
 
   // Progress tracker state
   const [progressMode, setProgressMode] = useState<'percent' | 'pages'>('percent')
@@ -101,7 +107,7 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
         const allUserBooks = [...readingBooks, ...finishedBooks, ...wantToReadBooks]
         const userBookMatch = allUserBooks.find((ub: any) => String(ub.book.id) === bookId)
 
-        // Fetch media type and network readers for this book (fire-and-forget)
+        // Fetch media type, network readers, and comparative ranking (fire-and-forget)
         fetch(`/api/books/media-type?bookId=${bookId}`)
           .then(r => r.json())
           .then(d => { if (d.data?.mediaType) setMediaType(d.data.mediaType) })
@@ -110,6 +116,16 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
         fetch(`/api/books/readers?bookId=${bookId}`)
           .then(r => r.json())
           .then(d => { if (d.data) setNetworkReaders(d.data) })
+          .catch(() => {})
+
+        fetch('/api/rankings')
+          .then(r => r.json())
+          .then(d => {
+            if (d.data) {
+              const myRanking = d.data.find((r: any) => r.hardcoverBookId === bookId)
+              if (myRanking) setComparativeScore(myRanking.displayScore)
+            }
+          })
           .catch(() => {})
 
         if (userBookMatch) {
@@ -261,6 +277,18 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
       })
       if (res.ok) {
         toast.success(newRating === 0 ? 'Rating cleared' : `Rated ${Number.isInteger(newRating) ? newRating : newRating.toFixed(1)}/5`)
+        // Also set as manual override in the ranking system
+        fetch('/api/rankings/manual', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hardcoverBookId: bookId, rating: newRating, bookTitle: book.title, bookAuthor: author, bookCoverUrl: coverUrl }),
+        }).then(r => {
+          if (r.ok && newRating > 0) {
+            setComparativeScore(newRating)
+          } else if (newRating === 0) {
+            setComparativeScore(null)
+          }
+        }).catch(() => {})
       } else {
         setUserRating(prevRating)
         const data = await res.json()
@@ -285,6 +313,11 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
       if (res.ok) {
         const config = STATUS_CONFIG[newStatusId]
         toast.success(`Marked as "${config?.label}"`)
+        // Trigger comparison dialog when marking as Read
+        if (newStatusId === 3) {
+          setIsRerank(false)
+          setComparisonDialogOpen(true)
+        }
       } else {
         setBookStatus(prevStatus)
         const data = await res.json()
@@ -529,15 +562,93 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
               {/* Rating + Progress */}
               <div>
                   <p className="text-sm text-muted-foreground mb-1">Your Rating</p>
-                  <StarRating rating={userRating} onRate={handleRating} size="lg" />
-                  {userRating > 0 && (
-                    <button
-                      onClick={() => handleRating(0)}
-                      className="text-[11px] text-muted-foreground hover:text-foreground mt-1 block cursor-pointer"
-                    >
-                      Clear rating
-                    </button>
+                  {/* Comparative score display */}
+                  {comparativeScore !== null && !manualOverrideMode ? (
+                    <div className="space-y-1">
+                      <StarRating rating={comparativeScore} size="lg" readOnly precision />
+                      <div className="flex items-center gap-2 mt-1">
+                        <button
+                          onClick={() => {
+                            setIsRerank(true)
+                            setComparisonDialogOpen(true)
+                          }}
+                          className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                          Rerank
+                        </button>
+                        <span className="text-muted-foreground/30">|</span>
+                        <button
+                          onClick={() => setManualOverrideMode(true)}
+                          className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
+                        >
+                          <Pencil className="h-3 w-3" />
+                          Set manually
+                        </button>
+                      </div>
+                    </div>
+                  ) : manualOverrideMode ? (
+                    <div className="space-y-1">
+                      <StarRating rating={userRating} onRate={handleRating} size="lg" />
+                      <div className="flex items-center gap-2 mt-1">
+                        {userRating > 0 && (
+                          <button
+                            onClick={() => handleRating(0)}
+                            className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
+                        {comparativeScore !== null && (
+                          <>
+                            <span className="text-muted-foreground/30">|</span>
+                            <button
+                              onClick={() => setManualOverrideMode(false)}
+                              className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+                            >
+                              Back to comparative
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <StarRating rating={userRating} onRate={handleRating} size="lg" />
+                      {userRating > 0 && (
+                        <button
+                          onClick={() => handleRating(0)}
+                          className="text-[11px] text-muted-foreground hover:text-foreground mt-1 block cursor-pointer"
+                        >
+                          Clear rating
+                        </button>
+                      )}
+                    </div>
                   )}
+                  {/* Comparison Dialog */}
+                  <ComparisonDialog
+                    open={comparisonDialogOpen}
+                    onOpenChange={setComparisonDialogOpen}
+                    bookId={bookId}
+                    bookTitle={book.title}
+                    bookAuthor={author}
+                    bookCoverUrl={coverUrl}
+                    isRerank={isRerank}
+                    onComplete={(score, _rankedList) => {
+                      setComparativeScore(score)
+                      setManualOverrideMode(false)
+                      // Sync to Hardcover (rounded to nearest 0.5)
+                      const hardcoverRating = Math.round(score * 2) / 2
+                      if (hardcoverRating > 0) {
+                        setUserRating(hardcoverRating)
+                        fetch('/api/hardcover/rating', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ bookId: Number(bookId), rating: hardcoverRating, userBookId: userBookIdState, bookTitle: book.title, bookAuthor: author, bookCoverUrl: coverUrl, mediaType }),
+                        }).catch(() => {})
+                      }
+                    }}
+                  />
 
                   {/* Your Progress — below rating */}
                   <div className="space-y-2 mt-4" style={{ maxWidth: '75%' }}>

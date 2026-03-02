@@ -4,10 +4,11 @@ import { useState, useRef } from 'react'
 import { Star, StarHalf } from 'lucide-react'
 
 interface StarRatingProps {
-  rating: number // 0-5 in 0.5 increments
+  rating: number // 0-5 in 0.5 increments (or 0.1 in precision mode)
   onRate?: (rating: number) => void
   size?: 'sm' | 'md' | 'lg'
   readOnly?: boolean
+  precision?: boolean // true = 0.1 increment proportional fill (read-only display)
 }
 
 const sizes = {
@@ -21,7 +22,7 @@ const sizes = {
  * Click on the left half of a star for X.5, right half for X.0.
  * Hover previews the value before clicking.
  */
-export function StarRating({ rating, onRate, size = 'md', readOnly = false }: StarRatingProps) {
+export function StarRating({ rating, onRate, size = 'md', readOnly = false, precision = false }: StarRatingProps) {
   const [hoverValue, setHoverValue] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const sizeClass = sizes[size]
@@ -32,6 +33,35 @@ export function StarRating({ rating, onRate, size = 'md', readOnly = false }: St
     const x = e.clientX - rect.left
     const isLeftHalf = x < rect.width / 2
     return isLeftHalf ? starIndex - 0.5 : starIndex
+  }
+
+  // Precision mode: read-only proportional fill (0.1 increments)
+  if (precision) {
+    return (
+      <div className="inline-flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map(star => {
+          const fillPct = Math.min(1, Math.max(0, rating - (star - 1))) * 100
+          return (
+            <span key={star} className="relative inline-flex">
+              <Star className={`${sizeClass} text-muted-foreground/30`} />
+              {fillPct > 0 && (
+                <span
+                  className="absolute inset-0 overflow-hidden"
+                  style={{ width: `${fillPct}%` }}
+                >
+                  <Star className={`${sizeClass} fill-yellow-500 text-yellow-500`} />
+                </span>
+              )}
+            </span>
+          )
+        })}
+        {rating > 0 && (
+          <span className={`ml-1 text-muted-foreground ${size === 'sm' ? 'text-[10px]' : size === 'md' ? 'text-xs' : 'text-sm'}`}>
+            {rating.toFixed(1)}
+          </span>
+        )}
+      </div>
+    )
   }
 
   return (
