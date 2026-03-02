@@ -25,6 +25,7 @@ model User {
   snapshots           Snapshot[]
   activityEvents      ActivityEvent[]   @relation("ActivityEvents")
   activityTargets     ActivityEvent[]   @relation("ActivityTargets")
+  userBookMediaTypes  UserBookMediaType[]
 
   @@map("users")
 }
@@ -97,6 +98,7 @@ model ActivityEvent {
   value           String?  // e.g. "Currently Reading", "4.5", "45%", "page 120"
   targetUserId    String?  @map("target_user_id")
   note            String?
+  mediaType       String?  @map("media_type") // "book" | "ebook" | "audiobook"
   visibility      String   @default("global") // "global" | "private"
   createdAt       DateTime @default(now()) @map("created_at")
 
@@ -104,6 +106,20 @@ model ActivityEvent {
   targetUser      User?    @relation("ActivityTargets", fields: [targetUserId], references: [id], onDelete: SetNull)
 
   @@map("activity_events")
+}
+
+model UserBookMediaType {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  hardcoverBookId String   @map("hardcover_book_id")
+  mediaType       String   @default("book") @map("media_type")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, hardcoverBookId])
+  @@map("user_book_media_types")
 }
 
 model Snapshot {

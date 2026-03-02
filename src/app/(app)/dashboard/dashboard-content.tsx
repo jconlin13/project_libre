@@ -440,19 +440,28 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
   }
 
   function renderActivityMessage(item: any) {
+    const isAudio = item.mediaType === 'audiobook'
+    const title = <span className="font-medium">{item.bookTitle}</span>
     switch (item.type) {
-      case 'status_change':
-        return <> shelved <span className="font-medium">{item.bookTitle}</span> as {item.value}</>
+      case 'status_change': {
+        if (item.value === 'Read') {
+          return <> finished {isAudio ? 'listening to' : 'reading'} {title}</>
+        }
+        if (item.value === 'Currently Reading') {
+          return <> started {isAudio ? 'listening to' : 'reading'} {title}</>
+        }
+        return <> shelved {title} as {item.value}</>
+      }
       case 'rating':
-        return <> rated <span className="font-medium">{item.bookTitle}</span> {item.value === 'cleared' ? '(cleared rating)' : `${item.value}/5 stars`}</>
+        return <> rated {title} {item.value === 'cleared' ? '(cleared rating)' : `${item.value}/5 stars`}</>
       case 'progress_update':
-        return <> updated <span className="font-medium">{item.bookTitle}</span> to {item.value}</>
+        return <> updated {title} to {item.value}</>
       case 'recommendation':
-        return <> recommended <span className="font-medium">{item.bookTitle}</span> to <span className="font-medium">{item.targetUser?.name}</span></>
+        return <> recommended {title} to <span className="font-medium">{item.targetUser?.name}</span></>
       case 'plus_one':
-        return <> added <span className="font-medium">{item.bookTitle}</span> to their wishlist</>
+        return <> added {title} to their wishlist</>
       default:
-        return <> did something with <span className="font-medium">{item.bookTitle}</span></>
+        return <> did something with {title}</>
     }
   }
 

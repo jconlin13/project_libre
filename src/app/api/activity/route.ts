@@ -55,6 +55,7 @@ export async function GET() {
       hardcoverBookId: e.hardcoverBookId,
       value: e.value,
       note: e.note,
+      mediaType: e.mediaType,
       createdAt: e.createdAt,
     }))
 

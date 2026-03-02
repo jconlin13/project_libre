@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     const token = decrypt(user.hardcoverApiToken)
     const body = await request.json()
-    const { bookId, progress, progressPages, userBookId, readId, bookTitle, bookAuthor, bookCoverUrl } = body
+    const { bookId, progress, progressPages, userBookId, readId, bookTitle, bookAuthor, bookCoverUrl, mediaType } = body
 
     if (!bookId) {
       return NextResponse.json({ error: 'bookId is required' }, { status: 400 })
@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
         bookAuthor: bookAuthor || null,
         bookCoverUrl: bookCoverUrl || null,
         value: progressValue,
+        mediaType: mediaType || null,
         visibility: 'global',
       },
     }).catch((e) => console.error('Activity event write failed:', e))

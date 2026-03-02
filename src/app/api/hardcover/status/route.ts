@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = decrypt(user.hardcoverApiToken)
-    const { bookId, statusId, userBookId, bookTitle, bookAuthor, bookCoverUrl } = await request.json()
+    const { bookId, statusId, userBookId, bookTitle, bookAuthor, bookCoverUrl, mediaType } = await request.json()
 
     if (!bookId || !VALID_STATUS_IDS.includes(statusId)) {
       return NextResponse.json({ error: 'bookId and valid statusId (1, 2, 3, 5) are required' }, { status: 400 })
@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
         bookAuthor: bookAuthor || null,
         bookCoverUrl: bookCoverUrl || null,
         value: STATUS_LABELS[statusId] || String(statusId),
+        mediaType: mediaType || null,
         visibility: 'global',
       },
     }).catch((e) => console.error('Activity event write failed:', e))

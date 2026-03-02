@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, CheckCircle, BookMarked, Bookmark, Ban, ChevronDown, ThumbsUp } from 'lucide-react'
+import { ArrowLeft, BookOpen, CheckCircle, BookMarked, Bookmark, Ban, ChevronDown, ThumbsUp, Book, Tablet, Headphones } from 'lucide-react'
 import { AmazonIcon } from '@/components/icons/amazon-icon'
 import { LibbyIcon } from '@/components/icons/libby-icon'
 import { HardcoverIcon } from '@/components/icons/hardcover-icon'
@@ -55,6 +55,9 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
   const [recommendDialogOpen, setRecommendDialogOpen] = useState(false)
   const [hasRecommended, setHasRecommended] = useState(false)
 
+  // Media type state
+  const [mediaType, setMediaType] = useState<string>('book')
+
   // Progress tracker state
   const [progressMode, setProgressMode] = useState<'percent' | 'pages'>('percent')
   const [editingProgress, setEditingProgress] = useState(false)
@@ -89,6 +92,12 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
         // Find the user_book entry across all lists
         const allUserBooks = [...readingBooks, ...finishedBooks, ...wantToReadBooks]
         const userBookMatch = allUserBooks.find((ub: any) => String(ub.book.id) === bookId)
+
+        // Fetch media type for this book
+        fetch(`/api/books/media-type?bookId=${bookId}`)
+          .then(r => r.json())
+          .then(d => { if (d.data?.mediaType) setMediaType(d.data.mediaType) })
+          .catch(() => {})
 
         if (userBookMatch) {
           // Store user_book ID for fast-path API calls
@@ -235,7 +244,7 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
       const res = await fetch('/api/hardcover/rating', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookId: Number(bookId), rating: newRating, userBookId: userBookIdState, bookTitle: book.title, bookAuthor: author, bookCoverUrl: coverUrl }),
+        body: JSON.stringify({ bookId: Number(bookId), rating: newRating, userBookId: userBookIdState, bookTitle: book.title, bookAuthor: author, bookCoverUrl: coverUrl, mediaType }),
       })
       if (res.ok) {
         toast.success(newRating === 0 ? 'Rating cleared' : `Rated ${Number.isInteger(newRating) ? newRating : newRating.toFixed(1)}/5`)
@@ -258,7 +267,7 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
       const res = await fetch('/api/hardcover/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookId: Number(bookId), statusId: newStatusId, userBookId: userBookIdState, bookTitle: book.title, bookAuthor: author, bookCoverUrl: coverUrl }),
+        body: JSON.stringify({ bookId: Number(bookId), statusId: newStatusId, userBookId: userBookIdState, bookTitle: book.title, bookAuthor: author, bookCoverUrl: coverUrl, mediaType }),
       })
       if (res.ok) {
         const config = STATUS_CONFIG[newStatusId]
@@ -279,7 +288,7 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
     if (isNaN(val) || val < 0 || !progressInput) return
     setSavingProgress(true)
     try {
-      const body: Record<string, unknown> = { bookId: Number(bookId), userBookId: userBookIdState, readId: readIdState, bookTitle: book.title, bookAuthor: author, bookCoverUrl: coverUrl }
+      const body: Record<string, unknown> = { bookId: Number(bookId), userBookId: userBookIdState, readId: readIdState, bookTitle: book.title, bookAuthor: author, bookCoverUrl: coverUrl, mediaType }
       if (progressMode === 'pages') {
         body.progressPages = val
       } else {
@@ -307,6 +316,25 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
       toast.error('Failed to update progress')
     } finally {
       setSavingProgress(false)
+    }
+  }
+
+  async function handleMediaTypeChange(newType: string) {
+    const prev = mediaType
+    setMediaType(newType)
+    try {
+      const res = await fetch('/api/books/media-type', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hardcoverBookId: bookId, mediaType: newType }),
+      })
+      if (!res.ok) {
+        setMediaType(prev)
+        toast.error('Failed to update format')
+      }
+    } catch {
+      setMediaType(prev)
+      toast.error('Failed to update format')
     }
   }
 
@@ -435,6 +463,28 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
               ) : bookStatus === null && !loading ? (
                 <p className="text-sm text-muted-foreground italic">Not in your library</p>
               ) : null}
+
+              {/* Media type selector */}
+              <div className="flex items-center gap-1">
+                {[
+                  { value: 'book', label: 'Book', Icon: Book },
+                  { value: 'ebook', label: 'Ebook', Icon: Tablet },
+                  { value: 'audiobook', label: 'Audio', Icon: Headphones },
+                ].map(({ value, label, Icon }) => (
+                  <button
+                    key={value}
+                    onClick={() => handleMediaTypeChange(value)}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                      mediaType === value
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+                    }`}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {label}
+                  </button>
+                ))}
+              </div>
 
               {/* Recommend button */}
               {bookStatus !== null && (
