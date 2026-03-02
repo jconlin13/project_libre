@@ -17,6 +17,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.4",
+    "effect": "^3.19.19",
     "geist": "^1.7.0",
     "graphql": "^16.12.0",
     "lucide-react": "^0.563.0",

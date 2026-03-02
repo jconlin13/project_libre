@@ -51,7 +51,7 @@ export function RecommendDialog({
       .then(data => {
         if (data.data) {
           const allMembers = data.data.flatMap((h: any) => h.members).filter((m: any) => m.id !== userId)
-          const unique: HouseholdMember[] = [...new Map(allMembers.map((m: any) => [m.id, m])).values()]
+          const unique = [...new Map(allMembers.map((m: any) => [m.id, m])).values()] as HouseholdMember[]
           setMembers(unique)
         }
       })
