@@ -158,6 +158,10 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
       .then(r => r.json())
       .then(d => setActivity(d.data || []))
       .catch(console.error)
+
+    // Background snapshot refresh (fire-and-forget) — caches member books for
+    // "Who's Read This?" and detects status/rating changes made on Hardcover directly
+    fetch('/api/snapshots/refresh', { method: 'POST' }).catch(() => {})
   }, [hasHousehold, households, fetchMemberBooks, currentUser.id])
 
   async function createHousehold() {

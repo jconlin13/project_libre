@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, CheckCircle, BookMarked, Bookmark, Ban, ChevronDown, ThumbsUp, Book, Tablet, Headphones } from 'lucide-react'
+import { ArrowLeft, BookOpen, CheckCircle, BookMarked, Bookmark, Ban, ChevronDown, ThumbsUp, Book, Tablet, Headphones, Users } from 'lucide-react'
 import { AmazonIcon } from '@/components/icons/amazon-icon'
 import { LibbyIcon } from '@/components/icons/libby-icon'
 import { HardcoverIcon } from '@/components/icons/hardcover-icon'
@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { RecommendDialog } from '@/components/recommend-dialog'
 
 interface BookDetailContentProps {
@@ -58,6 +59,13 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
   // Media type state
   const [mediaType, setMediaType] = useState<string>('book')
 
+  // Network readers state
+  const [networkReaders, setNetworkReaders] = useState<Array<{
+    userId: string; name: string; avatarUrl: string | null;
+    statusId: number | null; rating: number | null; progressPct: number | null;
+  }>>([])
+
+
   // Progress tracker state
   const [progressMode, setProgressMode] = useState<'percent' | 'pages'>('percent')
   const [editingProgress, setEditingProgress] = useState(false)
@@ -93,10 +101,15 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
         const allUserBooks = [...readingBooks, ...finishedBooks, ...wantToReadBooks]
         const userBookMatch = allUserBooks.find((ub: any) => String(ub.book.id) === bookId)
 
-        // Fetch media type for this book
+        // Fetch media type and network readers for this book (fire-and-forget)
         fetch(`/api/books/media-type?bookId=${bookId}`)
           .then(r => r.json())
           .then(d => { if (d.data?.mediaType) setMediaType(d.data.mediaType) })
+          .catch(() => {})
+
+        fetch(`/api/books/readers?bookId=${bookId}`)
+          .then(r => r.json())
+          .then(d => { if (d.data) setNetworkReaders(d.data) })
           .catch(() => {})
 
         if (userBookMatch) {
@@ -653,6 +666,56 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
               {/* End flex row */}
             </div>
           </div>
+
+          {/* In Your Network */}
+          {networkReaders.length > 0 && (
+            <div className="mt-6 pt-6 border-t">
+              <h2 className="font-semibold mb-3 flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                In Your Network
+              </h2>
+              <div className="space-y-2">
+                {networkReaders.map(reader => {
+                  const statusConfig = reader.statusId ? STATUS_CONFIG[reader.statusId] : null
+                  return (
+                    <Link key={reader.userId} href={`/person/${reader.userId}`}>
+                      <div className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-muted/50 transition-colors">
+                        <Avatar className="h-7 w-7">
+                          <AvatarImage src={reader.avatarUrl || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {reader.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-medium">{reader.name}</span>
+                        {statusConfig && (
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-full border"
+                            style={{
+                              color: statusConfig.textColor,
+                              backgroundColor: statusConfig.bgColor,
+                              borderColor: statusConfig.borderColor,
+                            }}
+                          >
+                            {statusConfig.label}
+                          </span>
+                        )}
+                        {reader.rating != null && reader.rating > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            {'★'} {Number.isInteger(reader.rating) ? reader.rating : reader.rating.toFixed(1)}
+                          </span>
+                        )}
+                        {reader.statusId === 2 && reader.progressPct != null && (
+                          <span className="text-xs text-muted-foreground">
+                            {Math.round(reader.progressPct * 100)}%
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Description — full width below the cover/info row */}
           {book.description && (

@@ -125,13 +125,18 @@ model UserBookMediaType {
 model Snapshot {
   id              String   @id @default(uuid())
   userId          String   @map("user_id")
-  type            String
+  type            String   @default("user_book")
   hardcoverBookId String   @map("hardcover_book_id")
+  statusId        Int?     @map("status_id")
   rating          Float?
   progressPct     Float?   @map("progress_pct")
+  bookTitle       String?  @map("book_title")
+  bookAuthor      String?  @map("book_author")
+  bookCoverUrl    String?  @map("book_cover_url")
   updatedAt       DateTime @default(now()) @map("updated_at")
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, hardcoverBookId])
   @@map("snapshots")
 }
