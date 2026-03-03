@@ -15,6 +15,8 @@ model User {
   hardcoverUserId     String?  @map("hardcover_user_id")
   hardcoverUsername    String?  @map("hardcover_username")
   hardcoverApiToken   String?  @map("hardcover_api_token")
+  avatarIcon          String?  @map("avatar_icon")
+  isAdmin             Boolean  @default(false) @map("is_admin")
   supabaseAuthId      String   @unique @map("supabase_auth_id")
   createdAt           DateTime @default(now()) @map("created_at")
 
@@ -32,6 +34,7 @@ model User {
   articleRecsSent      ArticleRecommendation[] @relation("ArticleRecFrom")
   articleRecsReceived  ArticleRecommendation[] @relation("ArticleRecTo")
   articleSaves        ArticleSave[]
+  auditLogs           AuditLog[]
 
   @@map("users")
 }
@@ -226,4 +229,18 @@ model ArticleSave {
 
   @@unique([userId, articleId])
   @@map("article_saves")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String   // login | logout | profile_update | account_delete | household_rename | household_leave | invite_regen | role_change | member_remove | admin_user_edit | admin_user_delete
+  targetId  String?  @map("target_id")
+  details   String?  // JSON string
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
 }

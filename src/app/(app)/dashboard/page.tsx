@@ -30,6 +30,7 @@ export default async function DashboardPage() {
       name: hm.user.name,
       email: hm.user.email,
       avatarUrl: hm.user.avatarUrl,
+      avatarIcon: hm.user.avatarIcon,
       hardcoverConnected: !!hm.user.hardcoverApiToken,
       hardcoverUsername: hm.user.hardcoverUsername,
       role: hm.role,

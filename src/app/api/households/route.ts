@@ -29,7 +29,9 @@ export async function GET() {
       members: m.household.members.map(hm => ({
         id: hm.user.id,
         name: hm.user.name,
+        email: hm.user.email,
         avatarUrl: hm.user.avatarUrl,
+        avatarIcon: hm.user.avatarIcon,
         role: hm.role,
         hardcoverConnected: !!hm.user.hardcoverApiToken,
         hardcoverUsername: hm.user.hardcoverUsername,

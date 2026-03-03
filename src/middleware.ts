@@ -1,19 +1,26 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  // Local auth mode: check for session cookie on protected routes
-  const session = request.cookies.get('local-session')
-  const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') ||
-    request.nextUrl.pathname.startsWith('/recommendations') ||
-    request.nextUrl.pathname.startsWith('/settings')
+// Public paths that don't require authentication
+const PUBLIC_PATHS = ['/', '/login']
+const PUBLIC_PREFIXES = ['/api/auth']
 
-  if (isProtectedRoute && !session) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
+function isPublicRoute(pathname: string): boolean {
+  if (PUBLIC_PATHS.includes(pathname)) return true
+  return PUBLIC_PREFIXES.some(prefix => pathname.startsWith(prefix))
+}
+
+export async function middleware(request: NextRequest) {
+  const session = request.cookies.get('local-session')
+  const { pathname } = request.nextUrl
 
   // Redirect logged-in users away from login page
-  if (request.nextUrl.pathname === '/login' && session) {
+  if (pathname === '/login' && session) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // All non-public routes require auth
+  if (!isPublicRoute(pathname) && !session) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return NextResponse.next()

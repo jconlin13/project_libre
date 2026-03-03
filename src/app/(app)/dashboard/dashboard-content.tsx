@@ -14,12 +14,14 @@ import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, CheckCircle, Hear
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { ReadsModule } from '@/components/reads-module'
+import { getAvatarEmoji } from '@/lib/avatar-icons'
 
 interface Member {
   id: string
   name: string
   email: string
   avatarUrl: string | null
+  avatarIcon: string | null
   hardcoverConnected: boolean
   hardcoverUsername: string | null
   role: string
@@ -675,8 +677,8 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
                         <Link href={`/person/${member.id}`}>
                           <Avatar className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
                             <AvatarImage src={member.avatarUrl || undefined} />
-                            <AvatarFallback>
-                              {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                            <AvatarFallback className={getAvatarEmoji(member.avatarIcon) ? 'text-lg' : undefined}>
+                              {getAvatarEmoji(member.avatarIcon) || member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                             </AvatarFallback>
                           </Avatar>
                         </Link>

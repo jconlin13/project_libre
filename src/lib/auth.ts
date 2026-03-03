@@ -32,10 +32,24 @@ export async function getCurrentUser() {
     const userId = await getLocalSessionUserId()
     if (!userId) return null
 
-    return prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       include: userInclude,
     })
+    if (!user) return null
+
+    // Sync admin status based on ADMIN_EMAIL env var
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase()
+    const shouldBeAdmin = !!adminEmail && user.email.toLowerCase() === adminEmail
+    if (user.isAdmin !== shouldBeAdmin) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { isAdmin: shouldBeAdmin },
+      })
+      user.isAdmin = shouldBeAdmin
+    }
+
+    return user
   }
 
   // Supabase auth mode
@@ -66,6 +80,21 @@ export async function getCurrentUser() {
   } catch {
     return null
   }
+}
+
+export async function verifyHouseholdAdmin(userId: string, householdId: string) {
+  const membership = await prisma.householdMember.findUnique({
+    where: { householdId_userId: { householdId, userId } },
+  })
+  if (!membership) return { error: 'Not a member', status: 403 as const }
+  if (membership.role !== 'admin') return { error: 'Not an admin', status: 403 as const }
+  return { membership }
+}
+
+export async function requireAdmin() {
+  const user = await getCurrentUser()
+  if (!user || !user.isAdmin) return null
+  return user
 }
 
 export async function getHouseholdMembers(userId: string) {

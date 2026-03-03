@@ -16,7 +16,7 @@ export default async function AppLayout({
   }
 
   return (
-    <AppShell user={{ name: user.name, email: user.email, avatarUrl: user.avatarUrl }}>
+    <AppShell user={{ name: user.name, email: user.email, avatarUrl: user.avatarUrl, avatarIcon: user.avatarIcon, isAdmin: user.isAdmin }}>
       {children}
     </AppShell>
   )

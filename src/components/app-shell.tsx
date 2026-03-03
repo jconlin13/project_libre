@@ -13,12 +13,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Home, ThumbsUp, Settings, LogOut, Menu, Moon, Sun, Link2, MessageSquare, Search, Newspaper } from 'lucide-react'
+import { Home, ThumbsUp, Settings, LogOut, Menu, Moon, Sun, Link2, MessageSquare, Search, Newspaper, Shield } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
 import { useFontSize } from '@/components/font-size-provider'
 import { SearchCommand } from '@/components/search-command'
+import { getAvatarEmoji } from '@/lib/avatar-icons'
 import { useState, useEffect } from 'react'
 
 const isLocalAuth = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === ''
@@ -29,10 +30,12 @@ interface AppShellProps {
     name: string
     email: string
     avatarUrl?: string | null
+    avatarIcon?: string | null
+    isAdmin?: boolean
   }
 }
 
-const navItems = [
+const baseNavItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/reads', label: 'Reads', icon: Newspaper },
   { href: '/recommendations', label: 'Recommendations', icon: ThumbsUp },
@@ -40,6 +43,9 @@ const navItems = [
 ]
 
 export function AppShell({ children, user }: AppShellProps) {
+  const navItems = user.isAdmin
+    ? [...baseNavItems, { href: '/admin', label: 'Admin', icon: Shield }]
+    : baseNavItems
   const pathname = usePathname()
   const router = useRouter()
   const { theme, setTheme } = useTheme()
@@ -81,6 +87,7 @@ export function AppShell({ children, user }: AppShellProps) {
     .join('')
     .toUpperCase()
     .slice(0, 2)
+  const avatarEmoji = getAvatarEmoji(user.avatarIcon)
 
   return (
     <div className="min-h-screen bg-background">
@@ -191,7 +198,9 @@ export function AppShell({ children, user }: AppShellProps) {
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.avatarUrl || undefined} />
-                    <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                    <AvatarFallback className={avatarEmoji ? 'text-lg' : 'text-xs'}>
+                      {avatarEmoji || initials}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
