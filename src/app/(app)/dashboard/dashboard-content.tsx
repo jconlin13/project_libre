@@ -10,9 +10,10 @@ import { BookCard } from '@/components/book-card'
 import { MemberCardSkeleton } from '@/components/loading-skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, CheckCircle, Heart, Activity, Star, BarChart3, Target, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, CheckCircle, Heart, Activity, Star, BarChart3, Target, ChevronLeft, ChevronRight, Newspaper } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { ReadsModule } from '@/components/reads-module'
 
 interface Member {
   id: string
@@ -479,6 +480,10 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
         return <> recommended {title} to <span className="font-medium">{item.targetUser?.name}</span></>
       case 'plus_one':
         return <> added {title} to their wishlist</>
+      case 'article_shared':
+        return <> shared an article: {title}</>
+      case 'article_recommended':
+        return <> recommended {title} to <span className="font-medium">{item.targetUser?.name}</span></>
       default:
         return <> did something with {title}</>
     }
@@ -555,72 +560,79 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
     return (
       <div className="space-y-8">
         {renderTopBar()}
-        {renderTabContent()}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+          <div className="min-w-0 space-y-8">
+            {renderTabContent()}
 
-        {/* Household prompt — below content */}
-        <Card className="border-dashed">
-          <CardContent className="py-8">
-            <div className="flex flex-col items-center text-center">
-              <Users className="h-10 w-10 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-1">Start a Family Book Club</h3>
-              <p className="text-sm text-muted-foreground mb-6 max-w-md">
-                Create a household to share your reading with family, or join an existing one with an invite code.
-              </p>
-              <div className="flex gap-4">
-                <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create Household
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create a Household</DialogTitle>
-                      <DialogDescription>Give your household a name. You&apos;ll get an invite code to share.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 pt-4">
-                      <div className="space-y-2">
-                        <Label>Household Name</Label>
-                        <Input
-                          placeholder="The Smith Family"
-                          value={householdName}
-                          onChange={e => setHouseholdName(e.target.value)}
-                          onKeyDown={e => e.key === 'Enter' && createHousehold()}
-                        />
-                      </div>
-                      <Button onClick={createHousehold} className="w-full">Create</Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+            {/* Household prompt — below content */}
+            <Card className="border-dashed">
+              <CardContent className="py-8">
+                <div className="flex flex-col items-center text-center">
+                  <Users className="h-10 w-10 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-1">Start a Family Book Club</h3>
+                  <p className="text-sm text-muted-foreground mb-6 max-w-md">
+                    Create a household to share your reading with family, or join an existing one with an invite code.
+                  </p>
+                  <div className="flex gap-4">
+                    <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Create Household
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Create a Household</DialogTitle>
+                          <DialogDescription>Give your household a name. You&apos;ll get an invite code to share.</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-4">
+                          <div className="space-y-2">
+                            <Label>Household Name</Label>
+                            <Input
+                              placeholder="The Smith Family"
+                              value={householdName}
+                              onChange={e => setHouseholdName(e.target.value)}
+                              onKeyDown={e => e.key === 'Enter' && createHousehold()}
+                            />
+                          </div>
+                          <Button onClick={createHousehold} className="w-full">Create</Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
 
-                <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline">Join Household</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Join a Household</DialogTitle>
-                      <DialogDescription>Enter the invite code shared by a family member.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 pt-4">
-                      <div className="space-y-2">
-                        <Label>Invite Code</Label>
-                        <Input
-                          placeholder="ABCD1234"
-                          value={inviteCode}
-                          onChange={e => setInviteCode(e.target.value.toUpperCase())}
-                          onKeyDown={e => e.key === 'Enter' && joinHousehold()}
-                        />
-                      </div>
-                      <Button onClick={joinHousehold} className="w-full">Join</Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                    <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline">Join Household</Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Join a Household</DialogTitle>
+                          <DialogDescription>Enter the invite code shared by a family member.</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-4">
+                          <div className="space-y-2">
+                            <Label>Invite Code</Label>
+                            <Input
+                              placeholder="ABCD1234"
+                              value={inviteCode}
+                              onChange={e => setInviteCode(e.target.value.toUpperCase())}
+                              onKeyDown={e => e.key === 'Enter' && joinHousehold()}
+                            />
+                          </div>
+                          <Button onClick={joinHousehold} className="w-full">Join</Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <aside>
+            <ReadsModule userId={currentUser.id} />
+          </aside>
+        </div>
       </div>
     )
   }
@@ -628,152 +640,159 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
   return (
     <div className="space-y-8">
       {renderTopBar()}
-      {renderTabContent()}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+        <div className="min-w-0 space-y-8">
+          {renderTabContent()}
 
-      {/* Household sections */}
-      {households.map(household => (
-        <div key={household.id}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">{household.name}</h2>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="gap-1 font-mono text-xs">
-                {household.inviteCode}
-              </Badge>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => {
-                  navigator.clipboard.writeText(household.inviteCode)
-                  toast.success('Invite code copied!')
-                }}
-              >
-                <Copy className="h-3 w-3" />
-              </Button>
+          {/* Household sections */}
+          {households.map(household => (
+            <div key={household.id}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">{household.name}</h2>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="gap-1 font-mono text-xs">
+                    {household.inviteCode}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => {
+                      navigator.clipboard.writeText(household.inviteCode)
+                      toast.success('Invite code copied!')
+                    }}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+                {household.members.filter(m => m.id !== currentUser.id).map(member => (
+                  <Card key={member.id} className="overflow-hidden">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-3">
+                        <Link href={`/person/${member.id}`}>
+                          <Avatar className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                            <AvatarImage src={member.avatarUrl || undefined} />
+                            <AvatarFallback>
+                              {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                        </Link>
+                        <div>
+                          <Link href={`/person/${member.id}`} className="hover:underline">
+                            <CardTitle className="text-base">{member.name}</CardTitle>
+                          </Link>
+                          <CardDescription className="text-xs">
+                            {member.hardcoverConnected ? (
+                              <span className="text-green-600 dark:text-green-400">@{member.hardcoverUsername}</span>
+                            ) : (
+                              <span className="text-muted-foreground">Hardcover not connected</span>
+                            )}
+                          </CardDescription>
+                        </div>
+                        {member.role === 'admin' && (
+                          <Badge variant="secondary" className="ml-auto text-xs">Admin</Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {!member.hardcoverConnected ? (
+                        <p className="text-sm text-muted-foreground py-4 text-center">
+                          Waiting for Hardcover connection
+                        </p>
+                      ) : loadingMembers.has(member.id) ? (
+                        <div className="space-y-2">
+                          <MemberCardSkeleton />
+                        </div>
+                      ) : memberBooks[member.id] ? (
+                        <div className="space-y-4">
+                          {memberBooks[member.id].reading.length > 0 && (
+                            <div>
+                              <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                                <BookOpen className="h-3 w-3" />
+                                Currently Reading
+                              </h4>
+                              <div className="space-y-1">
+                                {memberBooks[member.id].reading.slice(0, 3).map((ub: any) => {
+                                  const read = ub.user_book_reads?.[0]
+                                  return (
+                                    <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
+                                      <BookCard
+                                        book={ub.book}
+                                        progress={read?.progress}
+                                        progressPages={read?.progress_pages}
+                                        compact
+                                      />
+                                    </Link>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          {memberBooks[member.id].finished.length > 0 && (
+                            <div>
+                              <h4 className="text-xs font-medium text-muted-foreground mb-2">Recently Finished</h4>
+                              <div className="space-y-1">
+                                {memberBooks[member.id].finished.slice(0, 2).map((ub: any) => (
+                                  <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
+                                    <BookCard book={ub.book} rating={ub.rating} compact />
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {memberBooks[member.id].reading.length === 0 && memberBooks[member.id].finished.length === 0 && (
+                            <p className="text-sm text-muted-foreground py-4 text-center">
+                              No reading activity yet
+                            </p>
+                          )}
+                        </div>
+                      ) : null}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
-          </div>
+          ))}
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {household.members.filter(m => m.id !== currentUser.id).map(member => (
-              <Card key={member.id} className="overflow-hidden">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-3">
-                    <Link href={`/person/${member.id}`}>
-                      <Avatar className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
-                        <AvatarImage src={member.avatarUrl || undefined} />
-                        <AvatarFallback>
-                          {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+          {/* Activity Feed (inline on Books tab) */}
+          {activity.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {activity.slice(0, 5).map((item: any) => (
+                    <div key={item.id} className="flex items-start gap-3 pb-4 border-b last:border-0 last:pb-0">
+                      <Avatar className="h-8 w-8 mt-0.5">
+                        <AvatarImage src={item.user?.avatarUrl || undefined} />
+                        <AvatarFallback className="text-xs">
+                          {item.user?.name?.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                    </Link>
-                    <div>
-                      <Link href={`/person/${member.id}`} className="hover:underline">
-                        <CardTitle className="text-base">{member.name}</CardTitle>
-                      </Link>
-                      <CardDescription className="text-xs">
-                        {member.hardcoverConnected ? (
-                          <span className="text-green-600 dark:text-green-400">@{member.hardcoverUsername}</span>
-                        ) : (
-                          <span className="text-muted-foreground">Hardcover not connected</span>
-                        )}
-                      </CardDescription>
-                    </div>
-                    {member.role === 'admin' && (
-                      <Badge variant="secondary" className="ml-auto text-xs">Admin</Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {!member.hardcoverConnected ? (
-                    <p className="text-sm text-muted-foreground py-4 text-center">
-                      Waiting for Hardcover connection
-                    </p>
-                  ) : loadingMembers.has(member.id) ? (
-                    <div className="space-y-2">
-                      <MemberCardSkeleton />
-                    </div>
-                  ) : memberBooks[member.id] ? (
-                    <div className="space-y-4">
-                      {memberBooks[member.id].reading.length > 0 && (
-                        <div>
-                          <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                            <BookOpen className="h-3 w-3" />
-                            Currently Reading
-                          </h4>
-                          <div className="space-y-1">
-                            {memberBooks[member.id].reading.slice(0, 3).map((ub: any) => {
-                              const read = ub.user_book_reads?.[0]
-                              return (
-                                <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
-                                  <BookCard
-                                    book={ub.book}
-                                    progress={read?.progress}
-                                    progressPages={read?.progress_pages}
-                                    compact
-                                  />
-                                </Link>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      {memberBooks[member.id].finished.length > 0 && (
-                        <div>
-                          <h4 className="text-xs font-medium text-muted-foreground mb-2">Recently Finished</h4>
-                          <div className="space-y-1">
-                            {memberBooks[member.id].finished.slice(0, 2).map((ub: any) => (
-                              <Link key={ub.id} href={`/book/${ub.book.id}`} className="block">
-                                <BookCard book={ub.book} rating={ub.rating} compact />
-                              </Link>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {memberBooks[member.id].reading.length === 0 && memberBooks[member.id].finished.length === 0 && (
-                        <p className="text-sm text-muted-foreground py-4 text-center">
-                          No reading activity yet
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm">
+                          <span className="font-medium">{item.user?.name}</span>
+                          {renderActivityMessage(item)}
                         </p>
-                      )}
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {new Date(item.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                  ) : null}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      ))}
-
-      {/* Activity Feed (inline on Books tab) */}
-      {activity.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {activity.slice(0, 5).map((item: any) => (
-                <div key={item.id} className="flex items-start gap-3 pb-4 border-b last:border-0 last:pb-0">
-                  <Avatar className="h-8 w-8 mt-0.5">
-                    <AvatarImage src={item.user?.avatarUrl || undefined} />
-                    <AvatarFallback className="text-xs">
-                      {item.user?.name?.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm">
-                      <span className="font-medium">{item.user?.name}</span>
-                      {renderActivityMessage(item)}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(item.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+        <aside>
+          <ReadsModule userId={currentUser.id} />
+        </aside>
+      </div>
     </div>
   )
 }

@@ -28,6 +28,10 @@ model User {
   userBookMediaTypes  UserBookMediaType[]
   bookRankings        BookRanking[]
   bookComparisons     BookComparison[]
+  articles            Article[]
+  articleRecsSent      ArticleRecommendation[] @relation("ArticleRecFrom")
+  articleRecsReceived  ArticleRecommendation[] @relation("ArticleRecTo")
+  articleSaves        ArticleSave[]
 
   @@map("users")
 }
@@ -92,8 +96,8 @@ model PlusOne {
 model ActivityEvent {
   id              String   @id @default(uuid())
   userId          String   @map("user_id")
-  type            String   // status_change | rating | progress_update | recommendation | plus_one
-  hardcoverBookId String   @map("hardcover_book_id")
+  type            String   // status_change | rating | progress_update | recommendation | plus_one | article_shared | article_recommended
+  hardcoverBookId String?  @map("hardcover_book_id")
   bookTitle       String?  @map("book_title")
   bookAuthor      String?  @map("book_author")
   bookCoverUrl    String?  @map("book_cover_url")
@@ -173,4 +177,53 @@ model BookComparison {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("book_comparisons")
+}
+
+model Article {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  url         String?
+  title       String
+  description String?
+  source      String?  // domain name (e.g. "nytimes.com") or manual label
+  imageUrl    String?  @map("image_url")
+  tags        String   @default("[]") // JSON array of tag strings
+  note        String?  // personal note from the sharer
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user                   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleRecommendations ArticleRecommendation[]
+  articleSaves           ArticleSave[]
+
+  @@map("articles")
+}
+
+model ArticleRecommendation {
+  id         String   @id @default(uuid())
+  fromUserId String   @map("from_user_id")
+  toUserId   String   @map("to_user_id")
+  articleId  String   @map("article_id")
+  note       String?
+  status     String   @default("pending") // pending | seen | saved | dismissed
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  fromUser User    @relation("ArticleRecFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User    @relation("ArticleRecTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  article  Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@map("article_recommendations")
+}
+
+model ArticleSave {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  articleId String   @map("article_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@map("article_saves")
 }
