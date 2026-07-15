@@ -144,12 +144,17 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
             setUserRating(userBookMatch.rating)
           }
 
-          // Set progress from reading match
-          const readingMatch = readingBooks.find((ub: any) => String(ub.book.id) === bookId)
-          if (readingMatch) {
-            const read = readingMatch.user_book_reads?.[0]
-            if (read) {
-              setReadingProgress({ progress: read.progress, progress_pages: read.progress_pages })
+          // Set progress from reading match or finished status
+          if (userBookMatch.status_id === 3) {
+            // Finished books are always 100% complete
+            setReadingProgress({ progress: 100, progress_pages: null })
+          } else {
+            const readingMatch = readingBooks.find((ub: any) => String(ub.book.id) === bookId)
+            if (readingMatch) {
+              const read = readingMatch.user_book_reads?.[0]
+              if (read) {
+                setReadingProgress({ progress: read.progress, progress_pages: read.progress_pages })
+              }
             }
           }
 
@@ -313,8 +318,9 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
       if (res.ok) {
         const config = STATUS_CONFIG[newStatusId]
         toast.success(`Marked as "${config?.label}"`)
-        // Trigger comparison dialog when marking as Read
+        // When marking as Read, set progress to 100% and trigger comparison dialog
         if (newStatusId === 3) {
+          setReadingProgress({ progress: 100, progress_pages: null })
           setIsRerank(false)
           setComparisonDialogOpen(true)
         }

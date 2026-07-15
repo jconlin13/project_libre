@@ -127,6 +127,14 @@ function extractTag(html: string, tag: string): string | null {
  * Fallback: derive title from URL path slug.
  * e.g., /business/tariffs-automobile-industry.html → "Tariffs Automobile Industry"
  */
+// Matches UUIDs (with or without hyphens) and other hex-heavy ID strings
+const UUID_PATTERN = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i
+const HEX_ID_PATTERN = /^[0-9a-f]{16,}$/i
+
+function isIdSegment(s: string): boolean {
+  return UUID_PATTERN.test(s) || HEX_ID_PATTERN.test(s) || /^\d+$/.test(s)
+}
+
 function fallbackFromUrl(url: string, result: OGMetadata): OGMetadata {
   if (result.title) return result
 
@@ -135,8 +143,17 @@ function fallbackFromUrl(url: string, result: OGMetadata): OGMetadata {
     const path = parsed.pathname
     // Get the last path segment, remove extension, convert slugs to words
     const segments = path.split('/').filter(Boolean)
-    const last = segments[segments.length - 1] || ''
-    const slug = last.replace(/\.\w+$/, '') // remove extension
+
+    // Walk segments from last to first, skip IDs/UUIDs
+    let slug = ''
+    for (let i = segments.length - 1; i >= 0; i--) {
+      const candidate = segments[i].replace(/\.\w+$/, '') // remove extension
+      if (candidate && !isIdSegment(candidate)) {
+        slug = candidate
+        break
+      }
+    }
+
     if (slug) {
       result.title = slug
         .replace(/[-_]/g, ' ')

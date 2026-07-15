@@ -1,9 +1,23 @@
 'use client'
 
-import { ExternalLink, Bookmark, BookmarkCheck, ThumbsUp, Trash2 } from 'lucide-react'
+import { ExternalLink, Bookmark, BookmarkCheck, ThumbsUp, Trash2, Newspaper } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import Image from 'next/image'
+
+/**
+ * Get a favicon URL for a source domain using Google's S2 Favicon service.
+ * Returns null if no URL is available.
+ */
+function getSourceFaviconUrl(url: string | null): string | null {
+  if (!url) return null
+  try {
+    const domain = new URL(url).hostname
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`
+  } catch {
+    return null
+  }
+}
 
 export interface ArticleData {
   id: string
@@ -42,10 +56,21 @@ export function ArticleCard({
   const isOwner = article.user.id === currentUserId
   const timeAgo = getTimeAgo(article.createdAt)
 
+  const faviconUrl = getSourceFaviconUrl(article.url)
+
   // Compact mode for dashboard sidebar
   if (compact) {
     return (
       <div className="flex items-start gap-3 py-2">
+        {/* Source favicon */}
+        <div className="flex-shrink-0 mt-0.5">
+          {faviconUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={faviconUrl} alt="" width={16} height={16} className="rounded-sm" />
+          ) : (
+            <Newspaper className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
         <div className="min-w-0 flex-1">
           {article.url ? (
             <a
@@ -161,7 +186,13 @@ export function ArticleCard({
             {article.source && (
               <>
                 <span className="text-muted-foreground/30">·</span>
-                <span className="text-xs text-muted-foreground">{article.source}</span>
+                <span className="flex items-center gap-1">
+                  {faviconUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={faviconUrl} alt="" width={14} height={14} className="rounded-sm" />
+                  )}
+                  <span className="text-xs text-muted-foreground">{article.source}</span>
+                </span>
               </>
             )}
             <span className="text-muted-foreground/30">·</span>

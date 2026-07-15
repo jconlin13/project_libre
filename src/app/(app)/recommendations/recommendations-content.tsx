@@ -303,7 +303,7 @@ export function RecommendationsContent({ userId, hardcoverConnected }: Recommend
                       <div className="flex gap-4 p-4">
                         <div className="relative h-24 w-16 flex-shrink-0 overflow-hidden rounded">
                           {rec.bookCoverUrl ? (
-                            <Image src={rec.bookCoverUrl} alt={rec.bookTitle || ''} fill className="object-cover" sizes="64px" />
+                            <Image src={rec.bookCoverUrl} alt={rec.bookTitle || ''} fill className="object-cover" sizes="64px" unoptimized />
                           ) : (
                             <div className="h-full w-full bg-muted" />
                           )}
@@ -349,7 +349,7 @@ export function RecommendationsContent({ userId, hardcoverConnected }: Recommend
                       <div className="flex gap-4 p-4">
                         <div className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded">
                           {rec.bookCoverUrl ? (
-                            <Image src={rec.bookCoverUrl} alt={rec.bookTitle || ''} fill className="object-cover" sizes="44px" />
+                            <Image src={rec.bookCoverUrl} alt={rec.bookTitle || ''} fill className="object-cover" sizes="44px" unoptimized />
                           ) : (
                             <div className="h-full w-full bg-muted" />
                           )}
@@ -386,7 +386,7 @@ export function RecommendationsContent({ userId, hardcoverConnected }: Recommend
                 <div className="flex gap-4 p-4">
                   <div className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded">
                     {rec.bookCoverUrl ? (
-                      <Image src={rec.bookCoverUrl} alt={rec.bookTitle || ''} fill className="object-cover" sizes="44px" />
+                      <Image src={rec.bookCoverUrl} alt={rec.bookTitle || ''} fill className="object-cover" sizes="44px" unoptimized />
                     ) : (
                       <div className="h-full w-full bg-muted" />
                     )}
