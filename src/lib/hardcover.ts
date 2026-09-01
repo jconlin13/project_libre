@@ -201,6 +201,7 @@ export async function fetchAllUserBooks(token: string) {
         status_id
         rating
         date_added
+        last_read_date
         book {
           ${BOOK_FIELDS}
         }

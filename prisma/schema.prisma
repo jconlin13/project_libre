@@ -142,6 +142,7 @@ model Snapshot {
   bookTitle       String?  @map("book_title")
   bookAuthor      String?  @map("book_author")
   bookCoverUrl    String?  @map("book_cover_url")
+  lastReadDate    DateTime? @map("last_read_date")
   updatedAt       DateTime @default(now()) @map("updated_at")
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)

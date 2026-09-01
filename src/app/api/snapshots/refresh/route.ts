@@ -82,6 +82,8 @@ export async function POST() {
           const bookCoverUrl = extractCoverUrl(ub.book.cached_image)
           const read = ub.user_book_reads?.[0]
           const progressPct = read?.progress != null ? read.progress : null
+          // Hardcover returns last_read_date as a date string (e.g. "2026-05-12")
+          const lastReadDate = ub.last_read_date ? new Date(ub.last_read_date) : null
 
           // Detect changes for non-current-user members (skip first sync to avoid flooding)
           if (!isFirstSync && member.id !== user.id && existing) {
@@ -136,6 +138,7 @@ export async function POST() {
               bookTitle,
               bookAuthor,
               bookCoverUrl,
+              lastReadDate,
             },
             update: {
               statusId: ub.status_id,
@@ -144,6 +147,7 @@ export async function POST() {
               bookTitle,
               bookAuthor,
               bookCoverUrl,
+              lastReadDate,
               updatedAt: new Date(),
             }
           })

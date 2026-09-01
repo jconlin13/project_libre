@@ -14,6 +14,7 @@ import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, CheckCircle, Hear
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { ReadsModule } from '@/components/reads-module'
+import { DiscoveryModule, YearGoalsCard } from '@/components/discovery-module'
 import { getAvatarEmoji } from '@/lib/avatar-icons'
 
 interface Member {
@@ -552,7 +553,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
       case 'recommendations':
         return renderComingSoon('Recommendations')
       case 'goals':
-        return renderComingSoon('Goals')
+        return <YearGoalsCard />
       case 'stats':
         return renderComingSoon('Stats')
     }
@@ -645,6 +646,9 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         <div className="min-w-0 space-y-8">
           {renderTabContent()}
+
+          {/* Household discovery — books you share TBRs on & household favorites */}
+          {activeTab === 'books' && <DiscoveryModule currentUserId={currentUser.id} />}
 
           {/* Household sections */}
           {households.map(household => (
