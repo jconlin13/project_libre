@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { ExternalLink, Check, X, Shield, UserMinus, RefreshCw, ArrowUpDown, LogOut, Download, Trash2, AlertTriangle } from 'lucide-react'
+import { ExternalLink, Check, X, Shield, Download, Trash2, AlertTriangle, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { IconAvatarPicker } from '@/components/icon-avatar-picker'
 import { getAvatarEmoji } from '@/lib/avatar-icons'
@@ -60,16 +61,8 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
   const [token, setToken] = useState('')
   const [connecting, setConnecting] = useState(false)
 
-  // Household state
-  const [households, setHouseholds] = useState(initialHouseholds)
-  const [editingHouseholdName, setEditingHouseholdName] = useState<Record<string, string>>({})
-  const [confirmDialog, setConfirmDialog] = useState<{
-    type: 'remove-member' | 'regen-invite' | 'leave' | 'delete-account'
-    householdId?: string
-    memberId?: string
-    memberName?: string
-  } | null>(null)
-  const [actionLoading, setActionLoading] = useState(false)
+  // Groups are managed on their own pages — listed here only as links
+  const households = initialHouseholds
 
   // Delete account state
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('')
@@ -140,114 +133,6 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
     }
   }
 
-  // ---- Household Admin ----
-
-  async function renameHousehold(householdId: string) {
-    const newName = editingHouseholdName[householdId]?.trim()
-    if (!newName) return
-    try {
-      const res = await fetch(`/api/households/${householdId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName }),
-      })
-      if (res.ok) {
-        toast.success('Group renamed')
-        setHouseholds(prev => prev.map(h => h.id === householdId ? { ...h, name: newName } : h))
-        setEditingHouseholdName(prev => { const next = { ...prev }; delete next[householdId]; return next })
-      } else {
-        const data = await res.json()
-        toast.error(data.error || 'Failed to rename')
-      }
-    } catch {
-      toast.error('Failed to rename')
-    }
-  }
-
-  async function regenInviteCode(householdId: string) {
-    setActionLoading(true)
-    try {
-      const res = await fetch(`/api/households/${householdId}/invite-code`, { method: 'POST' })
-      const data = await res.json()
-      if (res.ok) {
-        toast.success('Invite code regenerated')
-        setHouseholds(prev => prev.map(h => h.id === householdId ? { ...h, inviteCode: data.data.inviteCode } : h))
-      } else {
-        toast.error(data.error || 'Failed to regenerate')
-      }
-    } catch {
-      toast.error('Failed to regenerate')
-    } finally {
-      setActionLoading(false)
-      setConfirmDialog(null)
-    }
-  }
-
-  async function changeRole(householdId: string, memberId: string, newRole: string) {
-    try {
-      const res = await fetch(`/api/households/${householdId}/members/${memberId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole }),
-      })
-      if (res.ok) {
-        toast.success(`Role updated to ${newRole}`)
-        setHouseholds(prev => prev.map(h =>
-          h.id === householdId
-            ? { ...h, members: h.members.map(m => m.id === memberId ? { ...m, role: newRole } : m) }
-            : h
-        ))
-      } else {
-        const data = await res.json()
-        toast.error(data.error || 'Failed to change role')
-      }
-    } catch {
-      toast.error('Failed to change role')
-    }
-  }
-
-  async function removeMember(householdId: string, memberId: string) {
-    setActionLoading(true)
-    try {
-      const res = await fetch(`/api/households/${householdId}/members/${memberId}`, { method: 'DELETE' })
-      if (res.ok) {
-        toast.success('Member removed')
-        setHouseholds(prev => prev.map(h =>
-          h.id === householdId
-            ? { ...h, members: h.members.filter(m => m.id !== memberId) }
-            : h
-        ))
-      } else {
-        const data = await res.json()
-        toast.error(data.error || 'Failed to remove member')
-      }
-    } catch {
-      toast.error('Failed to remove member')
-    } finally {
-      setActionLoading(false)
-      setConfirmDialog(null)
-    }
-  }
-
-  async function leaveHousehold(householdId: string) {
-    setActionLoading(true)
-    try {
-      const res = await fetch(`/api/households/${householdId}?action=leave`, { method: 'DELETE' })
-      if (res.ok) {
-        toast.success('Left group')
-        setHouseholds(prev => prev.filter(h => h.id !== householdId))
-      } else {
-        const data = await res.json()
-        toast.error(data.error || 'Failed to leave')
-      }
-    } catch {
-      toast.error('Failed to leave')
-    } finally {
-      setActionLoading(false)
-      setConfirmDialog(null)
-    }
-  }
-
   // ---- Delete Account ----
 
   async function deleteAccount() {
@@ -271,19 +156,6 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
     } finally {
       setDeleting(false)
     }
-  }
-
-  function renderMemberAvatar(member: HouseholdMemberInfo) {
-    const memberEmoji = getAvatarEmoji(member.avatarIcon)
-    const memberInitials = member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    return (
-      <Avatar className="h-8 w-8">
-        <AvatarImage src={member.avatarUrl || undefined} />
-        <AvatarFallback className="text-xs">
-          {memberEmoji || memberInitials}
-        </AvatarFallback>
-      </Avatar>
-    )
   }
 
   return (
@@ -440,119 +312,36 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
         </CardContent>
       </Card>
 
-      {/* Household Management */}
-      {households.length > 0 && households.map(household => (
-        <Card key={household.id}>
+
+      {/* Groups — managed on their own pages */}
+      {households.length > 0 && (
+        <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">
-                  {household.role === 'admin' ? (
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-primary" />
-                      {household.name}
-                    </div>
-                  ) : household.name}
-                </CardTitle>
-                <CardDescription>
-                  {household.role === 'admin' ? 'You are an admin of this group' : 'You are a member of this group'}
-                </CardDescription>
-              </div>
-              <Badge variant="outline" className="font-mono text-xs">
-                {household.inviteCode}
-              </Badge>
-            </div>
+            <CardTitle className="text-lg">Your Groups</CardTitle>
+            <CardDescription>
+              Group names, invite codes, and members are managed on each group&apos;s page.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Admin: Rename */}
-            {household.role === 'admin' && (
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Group Name</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={editingHouseholdName[household.id] ?? household.name}
-                    onChange={e => setEditingHouseholdName(prev => ({ ...prev, [household.id]: e.target.value }))}
-                    className="max-w-xs"
-                  />
-                  {editingHouseholdName[household.id] !== undefined && editingHouseholdName[household.id] !== household.name && (
-                    <Button size="sm" onClick={() => renameHousehold(household.id)}>
-                      Save
-                    </Button>
-                  )}
+          <CardContent className="space-y-2">
+            {households.map(household => (
+              <Link
+                key={household.id}
+                href={`/groups/${household.id}/settings`}
+                className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  {household.role === 'admin' && <Shield className="h-4 w-4 text-primary flex-shrink-0" />}
+                  <span className="text-sm font-medium truncate">{household.name}</span>
+                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                    {household.members.length} {household.members.length === 1 ? 'member' : 'members'}
+                  </span>
                 </div>
-              </div>
-            )}
-
-            {/* Admin: Regen invite code */}
-            {household.role === 'admin' && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => setConfirmDialog({ type: 'regen-invite', householdId: household.id })}
-                >
-                  <RefreshCw className="h-3 w-3" />
-                  Regenerate Invite Code
-                </Button>
-              </div>
-            )}
-
-            <Separator />
-
-            {/* Member list */}
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Members</Label>
-              {household.members.map(member => (
-                <div key={member.id} className="flex items-center gap-3 py-2">
-                  {renderMemberAvatar(member)}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{member.name}</p>
-                    <p className="text-xs text-muted-foreground">{member.email}</p>
-                  </div>
-                  <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
-                    {member.role}
-                  </Badge>
-                  {household.role === 'admin' && member.id !== user.id && (
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        title={member.role === 'admin' ? 'Demote to member' : 'Promote to admin'}
-                        onClick={() => changeRole(household.id, member.id, member.role === 'admin' ? 'member' : 'admin')}
-                      >
-                        <ArrowUpDown className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
-                        title="Remove member"
-                        onClick={() => setConfirmDialog({ type: 'remove-member', householdId: household.id, memberId: member.id, memberName: member.name })}
-                      >
-                        <UserMinus className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Leave household (for non-admins, or admins with other admins) */}
-            <Separator />
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-destructive hover:text-destructive"
-              onClick={() => setConfirmDialog({ type: 'leave', householdId: household.id })}
-            >
-              <LogOut className="h-3 w-3" />
-              Leave Group
-            </Button>
+                <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              </Link>
+            ))}
           </CardContent>
         </Card>
-      ))}
+      )}
 
       {/* Your Data */}
       <Card>
@@ -607,45 +396,6 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
           <p>Built with Next.js and the Hardcover GraphQL API.</p>
         </CardContent>
       </Card>
-
-      {/* Confirmation Dialog */}
-      <Dialog open={confirmDialog !== null} onOpenChange={open => { if (!open) setConfirmDialog(null) }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {confirmDialog?.type === 'remove-member' && 'Remove Member'}
-              {confirmDialog?.type === 'regen-invite' && 'Regenerate Invite Code'}
-              {confirmDialog?.type === 'leave' && 'Leave Group'}
-            </DialogTitle>
-            <DialogDescription>
-              {confirmDialog?.type === 'remove-member' && `Are you sure you want to remove ${confirmDialog.memberName} from this group?`}
-              {confirmDialog?.type === 'regen-invite' && 'This will invalidate the current invite code. Anyone with the old code will no longer be able to join.'}
-              {confirmDialog?.type === 'leave' && 'Are you sure you want to leave this group? You will need a new invite code to rejoin.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={() => setConfirmDialog(null)} disabled={actionLoading}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={actionLoading}
-              onClick={() => {
-                if (!confirmDialog) return
-                if (confirmDialog.type === 'remove-member' && confirmDialog.householdId && confirmDialog.memberId) {
-                  removeMember(confirmDialog.householdId, confirmDialog.memberId)
-                } else if (confirmDialog.type === 'regen-invite' && confirmDialog.householdId) {
-                  regenInviteCode(confirmDialog.householdId)
-                } else if (confirmDialog.type === 'leave' && confirmDialog.householdId) {
-                  leaveHousehold(confirmDialog.householdId)
-                }
-              }}
-            >
-              {actionLoading ? 'Please wait...' : 'Confirm'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Account Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

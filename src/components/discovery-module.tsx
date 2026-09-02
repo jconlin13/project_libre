@@ -1,27 +1,30 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Sparkles, Users, Star, BookOpenCheck } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Sparkles, Star, BookOpenCheck, Send, ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import { toast } from 'sonner'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getAvatarEmoji } from '@/lib/avatar-icons'
 
 interface Person {
-  userId: string
+  id: string
   name: string
   avatarUrl: string | null
   avatarIcon: string | null
 }
 
-interface OverlapBook {
+interface OverlapPair {
   hardcoverBookId: string
   bookTitle: string | null
   bookAuthor: string | null
   bookCoverUrl: string | null
-  wanters: Person[]
-  includesMe: boolean
+  person: Person
+  group: { id: string; name: string }
 }
 
 interface FavoriteBook {
@@ -33,7 +36,7 @@ interface FavoriteBook {
   lovedBy: Array<Person & { displayScore: number; rank: number; outOf: number }>
 }
 
-function PersonAvatar({ person, size = 'h-6 w-6' }: { person: Person; size?: string }) {
+export function PersonAvatar({ person, size = 'h-6 w-6' }: { person: Person; size?: string }) {
   const emoji = getAvatarEmoji(person.avatarIcon)
   return (
     <Avatar className={size}>
@@ -45,132 +48,206 @@ function PersonAvatar({ person, size = 'h-6 w-6' }: { person: Person; size?: str
   )
 }
 
-function CoverThumb({ url, title }: { url: string | null; title: string | null }) {
+export function CoverThumb({ url, title, className = 'h-16 w-11' }: { url: string | null; title: string | null; className?: string }) {
   return (
-    <div className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded bg-muted">
+    <div className={`relative ${className} flex-shrink-0 overflow-hidden rounded bg-muted`}>
       {url && (
-        <Image src={url} alt={title || ''} fill className="object-cover" sizes="44px" unoptimized />
+        <Image src={url} alt={title || ''} fill className="object-cover" sizes="88px" unoptimized />
       )}
     </div>
   )
 }
 
-function wantersLabel(book: OverlapBook, currentUserId: string): string {
-  const others = book.wanters.filter(w => w.userId !== currentUserId).map(w => w.name.split(' ')[0])
-  if (book.includesMe) {
-    if (others.length === 1) return `You and ${others[0]} both want to read this`
-    if (others.length === 2) return `You, ${others[0]}, and ${others[1]} all want to read this`
-    return `You and ${others.length} others want to read this`
-  }
-  if (others.length === 2) return `${others[0]} and ${others[1]} both want to read this`
-  return `${others.slice(0, 2).join(', ')} and ${others.length - 2} more want to read this`
+/**
+ * Spotlights one book at a time that the viewer and one specific group member
+ * both want to read, with a one-tap nudge to that person. Scales past two
+ * members because each pairing is its own moment rather than a merged list.
+ */
+export function ReadTogetherSpotlight({ groupId }: { groupId?: string }) {
+  const [pairs, setPairs] = useState<OverlapPair[]>([])
+  const [index, setIndex] = useState(0)
+  const [sending, setSending] = useState(false)
+  const [sentKeys, setSentKeys] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    const url = groupId
+      ? `/api/discovery/tbr-overlap?groupId=${groupId}`
+      : '/api/discovery/tbr-overlap'
+    fetch(url)
+      .then(r => r.json())
+      .then(d => setPairs(d.data || []))
+      .catch(() => {})
+  }, [groupId])
+
+  const current = pairs[index]
+  const pairKey = current ? `${current.hardcoverBookId}:${current.person.id}` : ''
+  const alreadySent = sentKeys.has(pairKey)
+
+  const suggest = useCallback(async () => {
+    if (!current) return
+    setSending(true)
+    try {
+      const res = await fetch('/api/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toUserId: current.person.id,
+          hardcoverBookId: current.hardcoverBookId,
+          bookTitle: current.bookTitle,
+          bookAuthor: current.bookAuthor,
+          bookCoverUrl: current.bookCoverUrl,
+          note: `We both want to read this — want to read it together?`,
+        }),
+      })
+      if (res.ok) {
+        toast.success(`Suggested to ${current.person.name.split(' ')[0]}!`)
+        setSentKeys(prev => new Set(prev).add(pairKey))
+      } else {
+        const d = await res.json()
+        toast.error(d.error || 'Failed to send suggestion')
+      }
+    } catch {
+      toast.error('Failed to send suggestion')
+    } finally {
+      setSending(false)
+    }
+  }, [current, pairKey])
+
+  if (pairs.length === 0) return null
+
+  const firstName = current.person.name.split(' ')[0]
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            Read It Together
+          </CardTitle>
+          {pairs.length > 1 && (
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground mr-1">
+                {index + 1} of {pairs.length}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setIndex(i => (i - 1 + pairs.length) % pairs.length)}
+                aria-label="Previous suggestion"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setIndex(i => (i + 1) % pairs.length)}
+                aria-label="Next suggestion"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-4">
+          <Link href={`/book/${current.hardcoverBookId}`} className="flex-shrink-0">
+            <CoverThumb url={current.bookCoverUrl} title={current.bookTitle} className="h-28 w-20" />
+          </Link>
+          <div className="min-w-0 flex-1 flex flex-col">
+            <Link href={`/book/${current.hardcoverBookId}`} className="hover:underline">
+              <p className="font-semibold leading-tight">{current.bookTitle}</p>
+            </Link>
+            <p className="text-sm text-muted-foreground">{current.bookAuthor}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <PersonAvatar person={current.person} size="h-6 w-6" />
+              <span className="text-sm">
+                You and <span className="font-medium">{firstName}</span> both want to read this
+              </span>
+            </div>
+            {!groupId && (
+              <Badge variant="outline" className="mt-2 w-fit text-xs font-normal">
+                {current.group.name}
+              </Badge>
+            )}
+            <Button
+              size="sm"
+              className="mt-3 w-fit gap-1.5"
+              onClick={suggest}
+              disabled={sending || alreadySent}
+            >
+              <Send className="h-3.5 w-3.5" />
+              {alreadySent ? `Suggested to ${firstName}` : `Suggest to ${firstName}`}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
-function lovedByLabel(book: FavoriteBook): string {
-  const parts = book.lovedBy
-    .sort((a, b) => b.displayScore - a.displayScore)
-    .slice(0, 2)
-    .map(l => `${l.name.split(' ')[0]}'s #${l.rank} of ${l.outOf}`)
-  return parts.join(' · ')
-}
-
-export function DiscoveryModule({ currentUserId }: { currentUserId: string }) {
-  const [overlaps, setOverlaps] = useState<OverlapBook[]>([])
+/** Highest-ranked books among group members that the viewer hasn't touched. */
+export function LovedByGroup({ groupId }: { groupId?: string }) {
   const [favorites, setFavorites] = useState<FavoriteBook[]>([])
 
   useEffect(() => {
-    fetch('/api/discovery/tbr-overlap')
-      .then(r => r.json())
-      .then(d => setOverlaps(d.data || []))
-      .catch(() => {})
-    fetch('/api/discovery/household-favorites')
+    const url = groupId
+      ? `/api/discovery/household-favorites?groupId=${groupId}`
+      : '/api/discovery/household-favorites'
+    fetch(url)
       .then(r => r.json())
       .then(d => setFavorites(d.data || []))
       .catch(() => {})
-  }, [])
+  }, [groupId])
 
-  if (overlaps.length === 0 && favorites.length === 0) return null
+  if (favorites.length === 0) return null
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      {overlaps.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              You Both Want This
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {overlaps.slice(0, 4).map(book => (
-              <Link
-                key={book.hardcoverBookId}
-                href={`/book/${book.hardcoverBookId}`}
-                className="flex items-center gap-3 rounded-lg p-2 -mx-2 hover:bg-muted/50 transition-colors"
-              >
-                <CoverThumb url={book.bookCoverUrl} title={book.bookTitle} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{book.bookTitle}</p>
-                  <p className="text-xs text-muted-foreground truncate">{book.bookAuthor}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <div className="flex -space-x-1.5">
-                      {book.wanters.slice(0, 3).map(w => (
-                        <PersonAvatar key={w.userId} person={w} size="h-5 w-5" />
-                      ))}
-                    </div>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {wantersLabel(book, currentUserId)}
-                    </span>
-                  </div>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          Loved by Your Group
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {favorites.slice(0, 4).map(book => {
+          const top = [...book.lovedBy].sort((a, b) => b.displayScore - a.displayScore)
+          return (
+            <Link
+              key={book.hardcoverBookId}
+              href={`/book/${book.hardcoverBookId}`}
+              className="flex items-center gap-3 rounded-lg p-2 -mx-2 hover:bg-muted/50 transition-colors"
+            >
+              <CoverThumb url={book.bookCoverUrl} title={book.bookTitle} />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate">{book.bookTitle}</p>
+                <p className="text-xs text-muted-foreground truncate">{book.bookAuthor}</p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="inline-flex items-center gap-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                    <Star className="h-3 w-3 fill-current" />
+                    {book.topScore.toFixed(1)}
+                  </span>
+                  <span className="text-xs text-muted-foreground truncate">
+                    {top.slice(0, 2).map(l => `${l.name.split(' ')[0]}'s #${l.rank} of ${l.outOf}`).join(' · ')}
+                  </span>
                 </div>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {favorites.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Loved by Your Group
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {favorites.slice(0, 4).map(book => (
-              <Link
-                key={book.hardcoverBookId}
-                href={`/book/${book.hardcoverBookId}`}
-                className="flex items-center gap-3 rounded-lg p-2 -mx-2 hover:bg-muted/50 transition-colors"
-              >
-                <CoverThumb url={book.bookCoverUrl} title={book.bookTitle} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{book.bookTitle}</p>
-                  <p className="text-xs text-muted-foreground truncate">{book.bookAuthor}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className="inline-flex items-center gap-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-                      <Star className="h-3 w-3 fill-current" />
-                      {book.topScore.toFixed(1)}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {lovedByLabel(book)}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-    </div>
+              </div>
+            </Link>
+          )
+        })}
+      </CardContent>
+    </Card>
   )
 }
 
 interface YearCounts {
   year: number
   total: number
-  members: Array<Person & { count: number }>
+  members: Array<{ userId: string; name: string; avatarUrl: string | null; avatarIcon: string | null; count: number }>
 }
 
 export function YearGoalsCard() {
@@ -225,7 +302,7 @@ export function YearGoalsCard() {
           <div className="mt-4 space-y-2">
             {counts.members.map(m => (
               <div key={m.userId} className="flex items-center gap-3">
-                <PersonAvatar person={m} />
+                <PersonAvatar person={{ id: m.userId, name: m.name, avatarUrl: m.avatarUrl, avatarIcon: m.avatarIcon }} />
                 <span className="text-sm flex-1 truncate">{m.name}</span>
                 <span className="text-sm text-muted-foreground">
                   {m.count} {m.count === 1 ? 'book' : 'books'}

@@ -1,21 +1,28 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { BookCard } from '@/components/book-card'
 import { BookCardSkeleton } from '@/components/loading-skeleton'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Search, Heart, Check, X, Plus } from 'lucide-react'
+import { Search, Heart, Check, X, Plus, Star, Quote } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
+import Link from 'next/link'
+import { ReadTogetherSpotlight, LovedByGroup, PersonAvatar } from '@/components/discovery-module'
+
+interface Person {
+  id: string
+  name: string
+  avatarUrl: string | null
+  avatarIcon: string | null
+}
 
 interface Recommendation {
   id: string
@@ -26,8 +33,17 @@ interface Recommendation {
   note: string | null
   status: string
   createdAt: string
-  fromUser: { id: string; name: string; avatarUrl: string | null }
-  toUser: { id: string; name: string; avatarUrl: string | null }
+  fromUser: { id: string; name: string; avatarUrl: string | null; avatarIcon: string | null }
+  toUser: { id: string; name: string; avatarUrl: string | null; avatarIcon: string | null }
+  // Context added server-side for received recommendations
+  senderRating?: { displayScore: number; rank: number; outOf: number } | null
+  alsoHave?: Array<{ user: Person; statusId: number | null; rating: number | null }>
+}
+
+const STATUS_TEXT: Record<number, string> = {
+  1: 'wants to read it',
+  2: 'is reading it',
+  3: 'read it',
 }
 
 interface RecommendationsContentProps {
@@ -270,6 +286,13 @@ export function RecommendationsContent({ userId, hardcoverConnected }: Recommend
         )}
       </div>
 
+      {/* Passive discovery — books surfaced from your groups without anyone
+          having to send a recommendation */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ReadTogetherSpotlight />
+        <LovedByGroup />
+      </div>
+
       <Tabs defaultValue="received">
         <TabsList>
           <TabsTrigger value="received" className="gap-2">
@@ -298,47 +321,86 @@ export function RecommendationsContent({ userId, hardcoverConnected }: Recommend
               {pendingReceived.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground">Pending</h3>
-                  {pendingReceived.map(rec => (
-                    <Card key={rec.id} className="overflow-hidden">
-                      <div className="flex gap-4 p-4">
-                        <div className="relative h-24 w-16 flex-shrink-0 overflow-hidden rounded">
-                          {rec.bookCoverUrl ? (
-                            <Image src={rec.bookCoverUrl} alt={rec.bookTitle || ''} fill className="object-cover" sizes="64px" unoptimized />
-                          ) : (
-                            <div className="h-full w-full bg-muted" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold truncate">{rec.bookTitle}</p>
-                          <p className="text-sm text-muted-foreground">{rec.bookAuthor}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Avatar className="h-5 w-5">
-                              <AvatarImage src={rec.fromUser.avatarUrl || undefined} />
-                              <AvatarFallback className="text-[8px]">
-                                {rec.fromUser.name.slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs text-muted-foreground">from {rec.fromUser.name}</span>
+                  {pendingReceived.map(rec => {
+                    const senderFirst = rec.fromUser.name.split(' ')[0]
+                    return (
+                      <Card key={rec.id} className="overflow-hidden">
+                        <div className="flex gap-4 p-4">
+                          <Link href={`/book/${rec.hardcoverBookId}`} className="flex-shrink-0">
+                            <div className="relative h-32 w-22 overflow-hidden rounded bg-muted" style={{ width: '5.5rem' }}>
+                              {rec.bookCoverUrl && (
+                                <Image src={rec.bookCoverUrl} alt={rec.bookTitle || ''} fill className="object-cover" sizes="88px" unoptimized />
+                              )}
+                            </div>
+                          </Link>
+
+                          <div className="flex-1 min-w-0">
+                            <Link href={`/book/${rec.hardcoverBookId}`} className="hover:underline">
+                              <p className="font-semibold leading-tight">{rec.bookTitle}</p>
+                            </Link>
+                            <p className="text-sm text-muted-foreground">{rec.bookAuthor}</p>
+
+                            {/* Lead with the sender's own words when they left any */}
+                            {rec.note && (
+                              <div className="flex gap-1.5 mt-2 text-sm">
+                                <Quote className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />
+                                <p className="italic">{rec.note}</p>
+                              </div>
+                            )}
+
+                            {/* Why you might read it: how the sender ranked it */}
+                            <div className="flex items-center gap-2 mt-2">
+                              <PersonAvatar person={{ ...rec.fromUser, avatarIcon: rec.fromUser.avatarIcon ?? null }} size="h-5 w-5" />
+                              <span className="text-xs text-muted-foreground">
+                                from <span className="font-medium text-foreground">{senderFirst}</span>
+                              </span>
+                              {rec.senderRating && (
+                                <>
+                                  <span className="text-muted-foreground/40">·</span>
+                                  <span className="inline-flex items-center gap-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                                    <Star className="h-3 w-3 fill-current" />
+                                    {rec.senderRating.displayScore.toFixed(1)}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    their #{rec.senderRating.rank} of {rec.senderRating.outOf}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+
+                            {/* Who else in the group has it */}
+                            {rec.alsoHave && rec.alsoHave.length > 0 && (
+                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                <div className="flex -space-x-1.5">
+                                  {rec.alsoHave.slice(0, 4).map(a => (
+                                    <PersonAvatar key={a.user.id} person={a.user} size="h-5 w-5" />
+                                  ))}
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {rec.alsoHave.length === 1
+                                    ? `${rec.alsoHave[0].user.name.split(' ')[0]} ${STATUS_TEXT[rec.alsoHave[0].statusId ?? 1] || 'has it'}`
+                                    : `${rec.alsoHave.length} others in your group have it`}
+                                </span>
+                              </div>
+                            )}
+
+                            <div className="flex gap-2 mt-3">
+                              <Button size="sm" className="h-7 gap-1" onClick={() => plusOneBook(rec)}>
+                                <Plus className="h-3 w-3" />
+                                Add to Wishlist
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7" onClick={() => updateRecommendation(rec.id, 'accepted')}>
+                                <Check className="h-3 w-3" />
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7" onClick={() => updateRecommendation(rec.id, 'dismissed')}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
-                          {rec.note && (
-                            <p className="text-sm text-muted-foreground mt-2 italic">&ldquo;{rec.note}&rdquo;</p>
-                          )}
-                          <div className="flex gap-2 mt-3">
-                            <Button size="sm" className="h-7 gap-1" onClick={() => plusOneBook(rec)}>
-                              <Plus className="h-3 w-3" />
-                              Add to Wishlist
-                            </Button>
-                            <Button size="sm" variant="outline" className="h-7" onClick={() => updateRecommendation(rec.id, 'accepted')}>
-                              <Check className="h-3 w-3" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-7" onClick={() => updateRecommendation(rec.id, 'dismissed')}>
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
                         </div>
-                      </div>
-                    </Card>
-                  ))}
+                      </Card>
+                    )
+                  })}
                 </div>
               )}
               {pastReceived.length > 0 && (
@@ -347,13 +409,11 @@ export function RecommendationsContent({ userId, hardcoverConnected }: Recommend
                   {pastReceived.map(rec => (
                     <Card key={rec.id} className="overflow-hidden opacity-75">
                       <div className="flex gap-4 p-4">
-                        <div className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded">
-                          {rec.bookCoverUrl ? (
-                            <Image src={rec.bookCoverUrl} alt={rec.bookTitle || ''} fill className="object-cover" sizes="44px" unoptimized />
-                          ) : (
-                            <div className="h-full w-full bg-muted" />
+                        <Link href={`/book/${rec.hardcoverBookId}`} className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded bg-muted">
+                          {rec.bookCoverUrl && (
+                            <Image src={rec.bookCoverUrl} alt={rec.bookTitle || ""} fill className="object-cover" sizes="44px" unoptimized />
                           )}
-                        </div>
+                        </Link>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{rec.bookTitle}</p>
                           <p className="text-xs text-muted-foreground">{rec.bookAuthor}</p>
@@ -384,13 +444,11 @@ export function RecommendationsContent({ userId, hardcoverConnected }: Recommend
             sent.map(rec => (
               <Card key={rec.id} className="overflow-hidden">
                 <div className="flex gap-4 p-4">
-                  <div className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded">
-                    {rec.bookCoverUrl ? (
-                      <Image src={rec.bookCoverUrl} alt={rec.bookTitle || ''} fill className="object-cover" sizes="44px" unoptimized />
-                    ) : (
-                      <div className="h-full w-full bg-muted" />
-                    )}
-                  </div>
+                  <Link href={`/book/${rec.hardcoverBookId}`} className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded bg-muted">
+                          {rec.bookCoverUrl && (
+                            <Image src={rec.bookCoverUrl} alt={rec.bookTitle || ""} fill className="object-cover" sizes="44px" unoptimized />
+                          )}
+                        </Link>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{rec.bookTitle}</p>
                     <p className="text-xs text-muted-foreground">{rec.bookAuthor}</p>

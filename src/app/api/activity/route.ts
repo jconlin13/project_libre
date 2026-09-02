@@ -1,25 +1,34 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get household member IDs
+    // ?groupId= scopes the feed to one group; omitted, it spans every group
+    // the caller belongs to (plus their own private events).
+    const groupId = new URL(request.url).searchParams.get('groupId')
+    const limitParam = Number(new URL(request.url).searchParams.get('limit'))
+    const take = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 50) : 30
+
     const memberships = await prisma.householdMember.findMany({
       where: { userId: user.id },
       select: { householdId: true }
     })
     const householdIds = memberships.map(m => m.householdId)
 
+    if (groupId && !householdIds.includes(groupId)) {
+      return NextResponse.json({ error: 'Not a member of this group' }, { status: 403 })
+    }
+
     const allMembers = await prisma.householdMember.findMany({
-      where: { householdId: { in: householdIds } },
+      where: { householdId: groupId ? groupId : { in: householdIds } },
       select: { userId: true }
     })
     const memberIds = [...new Set(allMembers.map(m => m.userId))]
@@ -40,7 +49,7 @@ export async function GET() {
         targetUser: { select: { id: true, name: true, avatarUrl: true } },
       },
       orderBy: { createdAt: 'desc' },
-      take: 30,
+      take,
     })
 
     // Normalize to response shape

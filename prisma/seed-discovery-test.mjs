@@ -19,6 +19,12 @@ const prisma = new PrismaClient()
 const TEST_USER_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
 const JACK_USER_ID = '29c0b900-e484-4da9-9064-833995d3a8ba'
 
+// A third member, so group features can be checked past the two-person case
+// (TBR spotlight pairings, "who else has it" on recommendations).
+const THIRD_USER_ID = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff'
+const THIRD_USER_EMAIL = 'maya@test.local'
+const THIRD_USER_NAME = 'Maya'
+
 // Fake books for Sarah's rankings — ids prefixed so --undo can target them
 const RANKED_BOOKS = [
   { id: 'seedtest-1001', title: 'The Remains of the Day', author: 'Kazuo Ishiguro', elo: 1750 },
@@ -41,6 +47,46 @@ async function seed() {
   if (!testUser) {
     console.error('Test user not found. Run seed-test-user.ts first.')
     process.exit(1)
+  }
+
+  // 0. Third group member, sharing Jack's group
+  const jackMembership = await prisma.householdMember.findFirst({
+    where: { userId: JACK_USER_ID },
+    select: { householdId: true },
+  })
+  if (jackMembership) {
+    await prisma.user.upsert({
+      where: { email: THIRD_USER_EMAIL },
+      update: { name: THIRD_USER_NAME },
+      create: {
+        id: THIRD_USER_ID,
+        name: THIRD_USER_NAME,
+        email: THIRD_USER_EMAIL,
+        supabaseAuthId: `local-test-${THIRD_USER_ID}`,
+      },
+    })
+    await prisma.householdMember.upsert({
+      where: { householdId_userId: { householdId: jackMembership.householdId, userId: THIRD_USER_ID } },
+      update: {},
+      create: { householdId: jackMembership.householdId, userId: THIRD_USER_ID, role: 'member' },
+    })
+    console.log(`✓ Third member ${THIRD_USER_NAME} added to the group`)
+
+    // Maya has read a book Jack recommends, and wants one Jack + Sarah want
+    await prisma.snapshot.upsert({
+      where: { userId_hardcoverBookId: { userId: THIRD_USER_ID, hardcoverBookId: '1011167' } },
+      update: { statusId: 3, rating: 4.5, lastReadDate: new Date(new Date().getFullYear(), 3, 2) },
+      create: {
+        userId: THIRD_USER_ID,
+        type: 'user_book',
+        hardcoverBookId: '1011167',
+        statusId: 3,
+        rating: 4.5,
+        bookTitle: 'Martyr! A Novel',
+        bookAuthor: 'Kaveh Akbar',
+        lastReadDate: new Date(new Date().getFullYear(), 3, 2),
+      },
+    })
   }
 
   // 1. Mirror 2 of Jack's Want to Read snapshots for Sarah → TBR overlap
@@ -127,6 +173,21 @@ async function undo() {
   // Sarah has no Hardcover token, so every snapshot she has came from seeding)
   const s = await prisma.snapshot.deleteMany({ where: { userId: TEST_USER_ID } })
   console.log(`✓ Removed ${r.count} rankings and ${s.count} snapshots for Sarah`)
+
+  // Recommendations to or from the seeded users
+  const recs = await prisma.recommendation.deleteMany({
+    where: {
+      OR: [
+        { toUserId: { in: [TEST_USER_ID, THIRD_USER_ID] } },
+        { fromUserId: { in: [TEST_USER_ID, THIRD_USER_ID] } },
+      ],
+    },
+  })
+  if (recs.count > 0) console.log(`✓ Removed ${recs.count} seeded recommendations`)
+
+  // Remove the third seeded member entirely (cascades their snapshots/membership)
+  const third = await prisma.user.deleteMany({ where: { id: THIRD_USER_ID } })
+  if (third.count > 0) console.log(`✓ Removed seeded member ${THIRD_USER_NAME}`)
 }
 
 const isUndo = process.argv.includes('--undo')

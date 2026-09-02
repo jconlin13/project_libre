@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Home, ThumbsUp, Settings, LogOut, Menu, Moon, Sun, Link2, MessageSquare, Search, Newspaper, Shield } from 'lucide-react'
+import { Home, ThumbsUp, Settings, LogOut, Menu, Moon, Sun, Link2, MessageSquare, Search, Newspaper, Shield, Users } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
@@ -38,6 +38,7 @@ interface AppShellProps {
 const baseNavItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/reads', label: 'Reads', icon: Newspaper },
+  { href: '/groups', label: 'Groups', icon: Users },
   { href: '/recommendations', label: 'Recommendations', icon: ThumbsUp },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]

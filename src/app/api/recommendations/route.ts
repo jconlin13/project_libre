@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser, getHouseholdMembers } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getScoredBooksForMembers, toMemberSummary, STATUS_WANT, STATUS_READING, STATUS_READ } from '@/lib/group-data'
 
 export async function GET() {
   try {
@@ -22,7 +23,59 @@ export async function GET() {
       }),
     ])
 
-    return NextResponse.json({ data: { received, sent } })
+    // Enrich received recommendations with "why you should read this" context:
+    // how the sender themselves ranked it, and who else in the group has it.
+    const groupMembers = await getHouseholdMembers(user.id)
+    const memberById = new Map(groupMembers.map(m => [m.id, m]))
+    const contextIds = [...new Set([user.id, ...groupMembers.map(m => m.id)])]
+    const bookIds = [...new Set(received.map(r => r.hardcoverBookId))]
+
+    let enrichedReceived = received as Array<(typeof received)[number] & {
+      senderRating?: { displayScore: number; rank: number; outOf: number } | null
+      alsoHave?: Array<{ user: ReturnType<typeof toMemberSummary>; statusId: number | null; rating: number | null }>
+    }>
+
+    if (bookIds.length > 0) {
+      const [scored, snapshots] = await Promise.all([
+        getScoredBooksForMembers(contextIds),
+        prisma.snapshot.findMany({
+          where: { userId: { in: contextIds }, hardcoverBookId: { in: bookIds } },
+        }),
+      ])
+
+      const scoreKey = (userId: string, bookId: string) => `${userId}:${bookId}`
+      const scoreMap = new Map(scored.map(s => [scoreKey(s.userId, s.hardcoverBookId), s]))
+
+      enrichedReceived = received.map(rec => {
+        const senderScore = scoreMap.get(scoreKey(rec.fromUserId, rec.hardcoverBookId))
+
+        const alsoHave = snapshots
+          .filter(s =>
+            s.hardcoverBookId === rec.hardcoverBookId &&
+            s.userId !== user.id &&
+            s.userId !== rec.fromUserId &&
+            s.statusId != null &&
+            [STATUS_WANT, STATUS_READING, STATUS_READ].includes(s.statusId)
+          )
+          .map(s => {
+            const u = memberById.get(s.userId)
+            return u ? { user: toMemberSummary(u), statusId: s.statusId, rating: s.rating } : null
+          })
+          .filter((x): x is NonNullable<typeof x> => !!x)
+          // Read first, then reading, then want-to-read
+          .sort((a, b) => (b.statusId ?? 0) - (a.statusId ?? 0))
+
+        return {
+          ...rec,
+          senderRating: senderScore
+            ? { displayScore: senderScore.displayScore, rank: senderScore.rank, outOf: senderScore.outOf }
+            : null,
+          alsoHave,
+        }
+      })
+    }
+
+    return NextResponse.json({ data: { received: enrichedReceived, sent } })
   } catch (error) {
     console.error('Recommendations error:', error)
     return NextResponse.json({ error: 'Failed to fetch recommendations' }, { status: 500 })
