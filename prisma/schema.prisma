@@ -167,6 +167,9 @@ model Snapshot {
   // import. While set, a Hardcover sync refreshes metadata but leaves the
   // shelf alone, so this app stays the source of truth.
   localUpdatedAt  DateTime? @map("local_updated_at")
+  // When cover art was last looked up. Set even when nothing was found, so
+  // enrichment is resumable and doesn't re-query books with no art anywhere.
+  coverCheckedAt  DateTime? @map("cover_checked_at")
   updatedAt       DateTime @default(now()) @map("updated_at")
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -7,7 +7,7 @@ import { Upload, FileText, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-r
 import { toast } from 'sonner'
 import { parseGoodreadsCsv, summarize, type ParsedBook } from '@/lib/goodreads-csv'
 
-type Stage = 'choose' | 'preview' | 'importing' | 'done'
+type Stage = 'choose' | 'preview' | 'importing' | 'enriching' | 'done'
 
 interface ImportResult {
   imported: number
@@ -24,6 +24,8 @@ export function ImportLibraryDialog({ open, onOpenChange }: { open: boolean; onO
   const [skipped, setSkipped] = useState<Array<{ row: number; reason: string }>>([])
   const [fileName, setFileName] = useState('')
   const [result, setResult] = useState<ImportResult | null>(null)
+  const [coversFound, setCoversFound] = useState(0)
+  const [coversLeft, setCoversLeft] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
   function reset() {
@@ -32,6 +34,8 @@ export function ImportLibraryDialog({ open, onOpenChange }: { open: boolean; onO
     setSkipped([])
     setFileName('')
     setResult(null)
+    setCoversFound(0)
+    setCoversLeft(0)
     if (inputRef.current) inputRef.current.value = ''
   }
 
@@ -68,6 +72,36 @@ export function ImportLibraryDialog({ open, onOpenChange }: { open: boolean; onO
     }
   }
 
+  /**
+   * Cover lookup needs a network round trip per book, so it runs after the
+   * import in small batches rather than blocking it. Progress is shown, and
+   * closing the dialog early just leaves the rest for next time.
+   */
+  async function runEnrichment() {
+    setStage('enriching')
+    let guard = 0
+    try {
+      for (;;) {
+        const res = await fetch('/api/import/enrich', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        })
+        if (!res.ok) break
+        const { data } = await res.json()
+        setCoversFound(prev => prev + (data.found || 0))
+        setCoversLeft(data.remaining ?? 0)
+        if (data.done || data.processed === 0) break
+        // Safety valve so a bad response can't spin forever
+        if (++guard > 400) break
+      }
+    } catch {
+      // Enrichment is best-effort; the import itself already succeeded
+    } finally {
+      setStage('done')
+    }
+  }
+
   async function runImport() {
     setStage('importing')
     try {
@@ -83,7 +117,8 @@ export function ImportLibraryDialog({ open, onOpenChange }: { open: boolean; onO
         return
       }
       setResult(data.data)
-      setStage('done')
+      setCoversLeft(data.data.imported + data.data.updated)
+      await runEnrichment()
     } catch {
       toast.error('Import failed')
       setStage('preview')
@@ -215,6 +250,19 @@ export function ImportLibraryDialog({ open, onOpenChange }: { open: boolean; onO
           </div>
         )}
 
+        {stage === 'enriching' && (
+          <div className="py-10 text-center">
+            <Loader2 className="h-8 w-8 mx-auto mb-3 animate-spin text-primary" />
+            <p className="text-sm font-medium">Your books are in — finding cover art</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {coversFound} found{coversLeft > 0 && `, ${coversLeft} to go`}
+            </p>
+            <p className="text-xs text-muted-foreground mt-3 max-w-xs mx-auto">
+              You can close this — anything left is picked up next time you import.
+            </p>
+          </div>
+        )}
+
         {stage === 'done' && result && (
           <div className="space-y-4 pt-2">
             <div className="py-6 text-center">
@@ -227,6 +275,11 @@ export function ImportLibraryDialog({ open, onOpenChange }: { open: boolean; onO
                 {result.ranked} added to your rankings
                 {result.failed > 0 && ` · ${result.failed} failed`}
               </p>
+              {coversFound > 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {coversFound} covers found
+                </p>
+              )}
             </div>
             <Button onClick={() => { handleClose(false); window.location.href = '/books' }} className="w-full">
               See your library
