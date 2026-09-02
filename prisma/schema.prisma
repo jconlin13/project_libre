@@ -35,8 +35,27 @@ model User {
   articleRecsReceived  ArticleRecommendation[] @relation("ArticleRecTo")
   articleSaves        ArticleSave[]
   auditLogs           AuditLog[]
+  friendshipsSent     Friendship[]      @relation("FriendshipRequester")
+  friendshipsReceived Friendship[]      @relation("FriendshipAddressee")
 
   @@map("users")
+}
+
+// Direct friendships, for people who don't share a group. Group co-membership
+// already implies a connection; this covers everyone outside that.
+model Friendship {
+  id          String   @id @default(uuid())
+  requesterId String   @map("requester_id")
+  addresseeId String   @map("addressee_id")
+  status      String   @default("pending") // pending | accepted
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  requester   User     @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee   User     @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@map("friendships")
 }
 
 model Household {

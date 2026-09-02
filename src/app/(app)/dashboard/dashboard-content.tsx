@@ -10,7 +10,7 @@ import { BookCard } from '@/components/book-card'
 import { MemberCardSkeleton } from '@/components/loading-skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, CheckCircle, Heart, Activity, Star, BarChart3, Target, ChevronLeft, ChevronRight, Newspaper } from 'lucide-react'
+import { Plus, Users, Copy, BookOpen, AlertCircle, BookMarked, Activity, BarChart3, Target, ChevronLeft, ChevronRight, Home } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { ReadsModule } from '@/components/reads-module'
@@ -55,12 +55,13 @@ interface MemberBooks {
   wantToRead: Array<{ id: number; book: any }>
 }
 
-type DashboardTab = 'books' | 'activity' | 'recommendations' | 'goals' | 'stats'
+// The full shelves live on /books and recommendations have their own page;
+// the dashboard is the at-a-glance home.
+type DashboardTab = 'home' | 'activity' | 'goals' | 'stats'
 
 const tabs: { id: DashboardTab; label: string; icon: React.ElementType }[] = [
-  { id: 'books', label: 'My Books', icon: BookOpen },
+  { id: 'home', label: 'Home', icon: Home },
   { id: 'activity', label: 'Activity', icon: Activity },
-  { id: 'recommendations', label: 'Recommendations', icon: Heart },
   { id: 'goals', label: 'Goals', icon: Target },
   { id: 'stats', label: 'Stats', icon: BarChart3 },
 ]
@@ -86,7 +87,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
   const [activity, setActivity] = useState<any[]>([])
   const [myBooks, setMyBooks] = useState<MemberBooks | null>(null)
   const [loadingMyBooks, setLoadingMyBooks] = useState(false)
-  const [activeTab, setActiveTab] = useState<DashboardTab>('books')
+  const [activeTab, setActiveTab] = useState<DashboardTab>('home')
   const [rankings, setRankings] = useState<Map<string, number>>(new Map())
 
   const firstName = currentUser.name.split(' ')[0]
@@ -340,7 +341,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
   }
 
   // My Books tab content
-  function renderMyBooks() {
+  function renderHome() {
     if (!currentUser.hardcoverConnected) {
       return (
         <Card>
@@ -402,59 +403,37 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
           </div>
         )}
 
-        {/* Recently Finished */}
-        {myBooks.finished.length > 0 && (
-          <div>
-            <Link href="/books/read" className="flex items-center justify-between group hover:bg-muted/50 rounded-lg px-2 py-1 -mx-2 transition-colors mb-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                <h3 className="text-lg font-semibold">Read</h3>
-                <CountBadge count={myBooks.finished.length} />
+        {/* The full Read and Want to Read shelves live on My Books */}
+        {(myBooks.finished.length > 0 || myBooks.wantToRead.length > 0) && (
+          <Link
+            href="/books"
+            className="flex items-center justify-between rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <BookMarked className="h-5 w-5" />
+              <div>
+                <p className="text-sm font-medium">Your whole library</p>
+                <p className="text-xs text-muted-foreground">
+                  {myBooks.finished.length} read · {myBooks.wantToRead.length} want to read
+                </p>
               </div>
-              <span className="text-sm text-muted-foreground group-hover:text-foreground flex items-center gap-1 transition-colors">
-                See All <ChevronRight className="h-4 w-4" />
-              </span>
-            </Link>
-            <BookRow>
-              {myBooks.finished.map((ub: any) => (
-                <Link key={ub.id} href={`/book/${ub.book.id}`} className="block h-full">
-                  <BookCard book={ub.book} rating={ub.rating} comparativeScore={rankings.get(String(ub.book.id)) ?? null} cover />
-                </Link>
-              ))}
-            </BookRow>
-          </div>
-        )}
-
-        {/* Want to Read */}
-        {myBooks.wantToRead.length > 0 && (
-          <div>
-            <Link href="/books/want-to-read" className="flex items-center justify-between group hover:bg-muted/50 rounded-lg px-2 py-1 -mx-2 transition-colors mb-4">
-              <div className="flex items-center gap-2">
-                <Heart className="h-5 w-5" />
-                <h3 className="text-lg font-semibold">Want to Read</h3>
-                <CountBadge count={myBooks.wantToRead.length} />
-              </div>
-              <span className="text-sm text-muted-foreground group-hover:text-foreground flex items-center gap-1 transition-colors">
-                See All <ChevronRight className="h-4 w-4" />
-              </span>
-            </Link>
-            <BookRow>
-              {myBooks.wantToRead.map((ub: any) => (
-                <Link key={ub.id} href={`/book/${ub.book.id}`} className="block h-full">
-                  <BookCard book={ub.book} cover />
-                </Link>
-              ))}
-            </BookRow>
-          </div>
+            </div>
+            <span className="text-sm text-muted-foreground flex items-center gap-1">
+              My Books <ChevronRight className="h-4 w-4" />
+            </span>
+          </Link>
         )}
 
         {myBooks.reading.length === 0 && myBooks.finished.length === 0 && myBooks.wantToRead.length === 0 && (
           <Card>
             <CardContent className="py-8 text-center">
               <BookMarked className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">
-                No reading activity on Hardcover yet. Start tracking a book there and it will show up here.
+              <p className="text-sm text-muted-foreground mb-4">
+                No books yet. Connect Hardcover, or bring your library over from Goodreads.
               </p>
+              <Link href="/settings">
+                <Button variant="outline" size="sm">Import your library</Button>
+              </Link>
             </CardContent>
           </Card>
         )}
@@ -546,12 +525,10 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
   // Render the active tab content
   function renderTabContent() {
     switch (activeTab) {
-      case 'books':
-        return renderMyBooks()
+      case 'home':
+        return renderHome()
       case 'activity':
         return renderActivity()
-      case 'recommendations':
-        return renderComingSoon('Recommendations')
       case 'goals':
         return <YearGoalsCard />
       case 'stats':

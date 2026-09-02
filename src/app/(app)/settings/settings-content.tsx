@@ -10,9 +10,10 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { ExternalLink, Check, X, Shield, Download, Trash2, AlertTriangle, ChevronRight } from 'lucide-react'
+import { ExternalLink, Check, X, Shield, Download, Trash2, AlertTriangle, ChevronRight, Upload } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { ImportLibraryDialog } from '@/components/import-library-dialog'
 import { IconAvatarPicker } from '@/components/icon-avatar-picker'
 import { getAvatarEmoji } from '@/lib/avatar-icons'
 
@@ -68,6 +69,7 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
 
   const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   const emoji = getAvatarEmoji(avatarIcon)
@@ -342,6 +344,27 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
           </CardContent>
         </Card>
       )}
+
+      {/* Import Library */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Import Your Library</CardTitle>
+          <CardDescription>
+            Bring your books over from Goodreads — no Hardcover account needed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" className="gap-2" onClick={() => setImportOpen(true)}>
+            <Upload className="h-4 w-4" />
+            Import from Goodreads
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2">
+            Upload a Goodreads CSV export to bring in your shelves, ratings, and read dates.
+          </p>
+        </CardContent>
+      </Card>
+
+      <ImportLibraryDialog open={importOpen} onOpenChange={setImportOpen} />
 
       {/* Your Data */}
       <Card>
