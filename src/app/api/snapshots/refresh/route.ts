@@ -82,11 +82,14 @@ export async function POST() {
           const bookCoverUrl = extractCoverUrl(ub.book.cached_image)
           const read = ub.user_book_reads?.[0]
           const progressPct = read?.progress != null ? read.progress : null
-          // Hardcover returns last_read_date as a date string (e.g. "2026-05-12")
+          // Hardcover returns these as date strings (e.g. "2026-05-12")
           const lastReadDate = ub.last_read_date ? new Date(ub.last_read_date) : null
+          const dateAdded = ub.date_added ? new Date(ub.date_added) : null
 
-          // Detect changes for non-current-user members (skip first sync to avoid flooding)
-          if (!isFirstSync && member.id !== user.id && existing) {
+          // Detect changes for non-current-user members (skip first sync to
+          // avoid flooding). Locally-edited books are skipped too: the
+          // Hardcover value is stale there, so a diff would be noise.
+          if (!isFirstSync && member.id !== user.id && existing && !existing.localUpdatedAt) {
             // Status change
             if (existing.statusId !== ub.status_id && ub.status_id) {
               await prisma.activityEvent.create({
@@ -120,6 +123,19 @@ export async function POST() {
             }
           }
 
+          // Hardcover is a source to bootstrap from, not the authority. Once a
+          // shelf has been set here — in the app or by an import — a sync
+          // refreshes cover/title metadata but leaves status, rating and
+          // progress alone, so a pull can't revert a newer local change.
+          const hasLocalEdit = !!existing?.localUpdatedAt
+          const shelfFields = hasLocalEdit
+            ? {}
+            : {
+                statusId: ub.status_id,
+                rating: ub.rating ?? null,
+                progressPct,
+              }
+
           // Upsert snapshot
           await prisma.snapshot.upsert({
             where: {
@@ -139,15 +155,15 @@ export async function POST() {
               bookAuthor,
               bookCoverUrl,
               lastReadDate,
+              dateAdded,
             },
             update: {
-              statusId: ub.status_id,
-              rating: ub.rating ?? null,
-              progressPct,
+              ...shelfFields,
               bookTitle,
               bookAuthor,
               bookCoverUrl,
               lastReadDate,
+              dateAdded,
               updatedAt: new Date(),
             }
           })

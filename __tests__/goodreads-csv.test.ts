@@ -137,6 +137,25 @@ describe('parseGoodreadsCsv', () => {
   })
 })
 
+describe('date added', () => {
+  it('captures Date Added separately from Date Read', () => {
+    const { books } = parseGoodreadsCsv(
+      'Book Id,Title,Author,ISBN,ISBN13,My Rating,Number of Pages,Date Read,Date Added,Exclusive Shelf\n' +
+      '1,Book,A,="1",="9780000000001",4,100,2026/03/04,2026/01/02,read'
+    )
+    expect(books[0].dateAdded).not.toBeNull()
+    expect(new Date(books[0].dateAdded!).getMonth()).toBe(0) // January
+    expect(new Date(books[0].dateRead!).getMonth()).toBe(2)  // March
+  })
+
+  it('leaves dateAdded null when the column is blank', () => {
+    const { books } = parseGoodreadsCsv(csv(
+      '1,Book,A,="1",="9780000000001",0,100,,,to-read',
+    ))
+    expect(books[0].dateAdded).toBeNull()
+  })
+})
+
 describe('summarize', () => {
   it('counts each shelf, ratings, and missing ISBNs', () => {
     const { books } = parseGoodreadsCsv(csv(

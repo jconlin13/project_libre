@@ -28,6 +28,7 @@ export interface ParsedBook {
   statusId: number
   shelf: string
   dateRead: string | null
+  dateAdded: string | null
   pageCount: number | null
 }
 
@@ -143,6 +144,7 @@ export function parseGoodreadsCsv(text: string): ParseResult {
   const idxIsbn = col('ISBN')
   const idxRating = col('My Rating')
   const idxDateRead = col('Date Read')
+  const idxDateAdded = col('Date Added')
   const idxPages = col('Number of Pages')
 
   for (let i = 1; i < rows.length; i++) {
@@ -187,6 +189,7 @@ export function parseGoodreadsCsv(text: string): ParseResult {
       statusId,
       shelf,
       dateRead: parseGoodreadsDate(row[idxDateRead]),
+      dateAdded: parseGoodreadsDate(row[idxDateAdded]),
       pageCount,
     })
   }

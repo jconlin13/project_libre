@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
       const isUpdate = existingIds.has(book.bookId)
       const coverUrl = coverUrlFor(book.bookId)
       const lastReadDate = book.dateRead ? new Date(book.dateRead) : null
+      const dateAdded = book.dateAdded ? new Date(book.dateAdded) : null
 
       try {
         await prisma.snapshot.upsert({
@@ -77,6 +78,10 @@ export async function POST(request: NextRequest) {
             bookAuthor: book.author,
             bookCoverUrl: coverUrl,
             lastReadDate,
+            dateAdded,
+            // An import is a deliberate statement of where these books sit,
+            // and is newer than whatever Hardcover last reported.
+            localUpdatedAt: new Date(),
           },
           update: {
             statusId: book.statusId,
@@ -86,6 +91,8 @@ export async function POST(request: NextRequest) {
             // Don't blank an existing cover if Open Library has nothing for us
             ...(coverUrl ? { bookCoverUrl: coverUrl } : {}),
             ...(lastReadDate ? { lastReadDate } : {}),
+            ...(dateAdded ? { dateAdded } : {}),
+            localUpdatedAt: new Date(),
             updatedAt: new Date(),
           },
         })

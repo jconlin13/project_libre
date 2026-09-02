@@ -6,8 +6,13 @@ import { BookCover } from '@/components/book-cover'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { BookOpen, CheckCircle, Heart, XCircle, Newspaper, Star, Search, Library, Upload } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  BookOpen, CheckCircle, Heart, XCircle, Newspaper, Star, Search, Library, Upload,
+  ArrowUpNarrowWide, ArrowDownWideNarrow,
+} from 'lucide-react'
 import { ReadsContent } from '@/app/(app)/reads/reads-content'
+import { SORT_OPTIONS, sortBooks, type SortKey, type SortDir } from '@/lib/book-sort'
 
 interface LibraryBook {
   hardcoverBookId: string
@@ -18,6 +23,7 @@ interface LibraryBook {
   rating: number | null
   progressPct: number | null
   lastReadDate: string | null
+  dateAdded: string | null
   isRanked: boolean
   isHardcover: boolean
 }
@@ -41,7 +47,40 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'articles', label: 'Articles', icon: Newspaper },
 ]
 
-function BookTile({ book }: { book: LibraryBook }) {
+/** Each shelf opens on the sort that reads most naturally for it. */
+const DEFAULT_SORT: Record<Tab, { key: SortKey; dir: SortDir }> = {
+  'currently-reading': { key: 'progress', dir: 'desc' },
+  'read': { key: 'dateCompleted', dir: 'desc' },
+  'want-to-read': { key: 'dateAdded', dir: 'desc' },
+  'not-finished': { key: 'dateAdded', dir: 'desc' },
+  'articles': { key: 'dateAdded', dir: 'desc' },
+}
+
+function shortDate(value: string | null): string | null {
+  if (!value) return null
+  const d = new Date(value)
+  if (isNaN(d.getTime())) return null
+  return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+}
+
+/**
+ * When sorting by a date, show that date on the tile — otherwise the ordering
+ * looks arbitrary to the reader.
+ */
+function sortCaption(book: LibraryBook, sortKey: SortKey): string | null {
+  if (sortKey === 'dateAdded') {
+    const d = shortDate(book.dateAdded)
+    return d && `Added ${d}`
+  }
+  if (sortKey === 'dateCompleted') {
+    const d = shortDate(book.lastReadDate)
+    return d && `Finished ${d}`
+  }
+  return null
+}
+
+function BookTile({ book, sortKey }: { book: LibraryBook; sortKey: SortKey }) {
+  const caption = sortCaption(book, sortKey)
   return (
     <Link
       href={`/book/${book.hardcoverBookId}`}
@@ -71,6 +110,7 @@ function BookTile({ book }: { book: LibraryBook }) {
             <span className="text-[10px] text-muted-foreground">{Math.round(book.progressPct)}%</span>
           </div>
         )}
+        {caption && <p className="text-[10px] text-muted-foreground mt-0.5">{caption}</p>}
       </div>
     </Link>
   )
@@ -83,6 +123,8 @@ export function MyBooksContent({ userId, initialTab }: { userId: string; initial
     TABS.some(t => t.id === initialTab) ? (initialTab as Tab) : 'currently-reading'
   )
   const [query, setQuery] = useState('')
+  // Sort is remembered per shelf, so switching tabs doesn't reset your choice
+  const [sortByTab, setSortByTab] = useState<Record<Tab, { key: SortKey; dir: SortDir }>>(DEFAULT_SORT)
 
   useEffect(() => {
     fetch('/api/library')
@@ -91,6 +133,10 @@ export function MyBooksContent({ userId, initialTab }: { userId: string; initial
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  const sort = sortByTab[tab]
+  const setSort = (next: { key: SortKey; dir: SortDir }) =>
+    setSortByTab(prev => ({ ...prev, [tab]: next }))
 
   const listFor = (t: Tab): LibraryBook[] => {
     if (!library) return []
@@ -110,8 +156,13 @@ export function MyBooksContent({ userId, initialTab }: { userId: string; initial
         (b.bookAuthor || '').toLowerCase().includes(query.toLowerCase())
       )
     : books
+  const visible = sortBooks(filtered, sort.key, sort.dir)
 
   const countFor = (t: Tab) => (t === 'articles' ? null : listFor(t).length)
+
+  // Only offer sorts that mean something on the current shelf
+  const sortOptions = SORT_OPTIONS.filter(o => !o.shelves || o.shelves.includes(tab))
+  const activeSort = sortOptions.find(o => o.key === sort.key) ?? sortOptions[0]
 
   return (
     <div className="space-y-6">
@@ -178,25 +229,60 @@ export function MyBooksContent({ userId, initialTab }: { userId: string; initial
         </Card>
       ) : (
         <>
-          {books.length > 12 && (
-            <div className="relative max-w-sm">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search this shelf..."
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                className="pl-8"
-              />
+          <div className="flex flex-wrap items-center gap-3">
+            {books.length > 12 && (
+              <div className="relative flex-1 min-w-[200px] max-w-sm">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search this shelf..."
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 ml-auto">
+              <span className="text-xs text-muted-foreground hidden sm:inline">Sort by</span>
+              <Select
+                value={sort.key}
+                onValueChange={v => setSort({ key: v as SortKey, dir: sort.dir })}
+              >
+                <SelectTrigger className="h-9 w-[150px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortOptions.map(o => (
+                    <SelectItem key={o.key} value={o.key}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1.5"
+                onClick={() => setSort({ key: sort.key, dir: sort.dir === 'asc' ? 'desc' : 'asc' })}
+                title={`Sorted ${sort.dir === 'asc' ? activeSort.asc : activeSort.desc}`}
+              >
+                {sort.dir === 'asc'
+                  ? <ArrowUpNarrowWide className="h-3.5 w-3.5" />
+                  : <ArrowDownWideNarrow className="h-3.5 w-3.5" />}
+                <span className="hidden md:inline text-xs">
+                  {sort.dir === 'asc' ? activeSort.asc : activeSort.desc}
+                </span>
+              </Button>
             </div>
-          )}
-          {filtered.length === 0 ? (
+          </div>
+
+          {visible.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
               No books match &ldquo;{query}&rdquo;.
             </p>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-              {filtered.map(b => (
-                <BookTile key={b.hardcoverBookId} book={b} />
+              {visible.map(b => (
+                <BookTile key={b.hardcoverBookId} book={b} sortKey={sort.key} />
               ))}
             </div>
           )}

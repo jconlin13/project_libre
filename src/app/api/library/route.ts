@@ -40,6 +40,7 @@ export async function GET() {
       rating: s.rating,
       progressPct: s.progressPct,
       lastReadDate: s.lastReadDate,
+      dateAdded: s.dateAdded,
       isRanked: rankedIds.has(s.hardcoverBookId),
       // Imported books have no Hardcover page to link out to
       isHardcover: isHardcoverId(s.hardcoverBookId),
