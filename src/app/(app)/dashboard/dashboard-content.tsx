@@ -136,20 +136,47 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
 
   // Fetch current user's books regardless of household status
   useEffect(() => {
-    if (!currentUser.hardcoverConnected) return
-
     setLoadingMyBooks(true)
-    Promise.all([
-      fetch('/api/hardcover?action=reading').then(r => r.json()),
-      fetch('/api/hardcover?action=finished&limit=20').then(r => r.json()),
-      fetch('/api/hardcover?action=want-to-read').then(r => r.json()),
-    ]).then(([readingData, finishedData, wantToReadData]) => {
-      setMyBooks({
-        reading: readingData.data || [],
-        finished: finishedData.data || [],
-        wantToRead: wantToReadData.data || [],
+
+    // Read the local library rather than Hardcover directly: it reflects
+    // imports and in-app shelf changes, and it works for someone who never
+    // connected Hardcover at all. Shaped here to match what BookCard expects.
+    const toUserBook = (b: {
+      hardcoverBookId: string
+      bookTitle: string | null
+      bookAuthor: string | null
+      bookCoverUrl: string | null
+      rating: number | null
+      progressPct: number | null
+    }) => ({
+      id: b.hardcoverBookId,
+      rating: b.rating,
+      book: {
+        id: b.hardcoverBookId,
+        title: b.bookTitle,
+        cached_image: b.bookCoverUrl ? { url: b.bookCoverUrl } : null,
+        cached_contributors: b.bookAuthor
+          ? [{ author: { name: b.bookAuthor, slug: null } }]
+          : [],
+      },
+      user_book_reads: b.progressPct != null
+        ? [{ progress: b.progressPct, progress_pages: null }]
+        : [],
+    })
+
+    fetch('/api/library')
+      .then(r => r.json())
+      .then(d => {
+        const lib = d.data
+        if (!lib) return
+        setMyBooks({
+          reading: (lib.currentlyReading || []).map(toUserBook),
+          finished: (lib.read || []).map(toUserBook),
+          wantToRead: (lib.wantToRead || []).map(toUserBook),
+        })
       })
-    }).catch(console.error).finally(() => setLoadingMyBooks(false))
+      .catch(console.error)
+      .finally(() => setLoadingMyBooks(false))
 
     // Fetch comparative rankings
     fetch('/api/rankings')
