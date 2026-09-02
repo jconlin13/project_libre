@@ -45,7 +45,7 @@ export function FeedbackContent() {
     }
 
     // Final fallback: construct mailto directly
-    const subject = encodeURIComponent(`[Family Book Club] ${type}`)
+    const subject = encodeURIComponent(`[Libre] ${type}`)
     const body = encodeURIComponent(`Type: ${type}\n\nDetails:\n${details}`)
     window.open(`mailto:?subject=${subject}&body=${body}`, '_blank')
     setSubmitted(true)
@@ -57,7 +57,7 @@ export function FeedbackContent() {
         <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
         <h1 className="text-2xl font-bold mb-2">Thank you!</h1>
         <p className="text-muted-foreground">
-          Your feedback has been submitted. We appreciate you helping improve Family Book Club.
+          Your feedback has been submitted. We appreciate you helping improve Libre.
         </p>
       </div>
     )

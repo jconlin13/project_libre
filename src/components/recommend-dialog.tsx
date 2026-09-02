@@ -102,7 +102,7 @@ export function RecommendDialog({
         <DialogHeader>
           <DialogTitle>Recommend this Book</DialogTitle>
           <DialogDescription>
-            Send &ldquo;{bookTitle}&rdquo; to a family member.
+            Send &ldquo;{bookTitle}&rdquo; to a group member.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 pt-2">

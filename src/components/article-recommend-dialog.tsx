@@ -94,7 +94,7 @@ export function ArticleRecommendDialog({
         <DialogHeader>
           <DialogTitle>Recommend Article</DialogTitle>
           <DialogDescription>
-            Send &ldquo;{articleTitle}&rdquo; to a family member.
+            Send &ldquo;{articleTitle}&rdquo; to a group member.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 pt-2">

@@ -415,7 +415,7 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
           <CardTitle className="text-lg">About</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>Family Book Club is a private overlay for Hardcover that brings your group&apos;s reading activity together.</p>
+          <p>Libre is a private overlay for Hardcover that brings your group&apos;s reading activity together.</p>
           <p>Built with Next.js and the Hardcover GraphQL API.</p>
         </CardContent>
       </Card>

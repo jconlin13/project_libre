@@ -19,7 +19,7 @@ const OL_COVER_BY_ID = 'https://covers.openlibrary.org/b/id'
 const OL_COVER_BY_ISBN = 'https://covers.openlibrary.org/b/isbn'
 
 // Open Library asks that clients identify themselves.
-const USER_AGENT = 'Libre/1.0 (private family book club; contact via github.com/jconlin13/project_libre)'
+const USER_AGENT = 'Libre/1.0 (private reading group app; contact via github.com/jconlin13/project_libre)'
 
 const TIMEOUT_MS = 12_000
 

@@ -549,9 +549,9 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
               <CardContent className="py-8">
                 <div className="flex flex-col items-center text-center">
                   <Users className="h-10 w-10 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-1">Start a Family Book Club</h3>
+                  <h3 className="text-lg font-semibold mb-1">Start a Group</h3>
                   <p className="text-sm text-muted-foreground mb-6 max-w-md">
-                    Create a group to share your reading with family or friends, or join an existing one with an invite code.
+                    Create a group to share your reading with the people you read alongside, or join an existing one with an invite code.
                   </p>
                   <div className="flex gap-4">
                     <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
@@ -570,7 +570,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
                           <div className="space-y-2">
                             <Label>Group Name</Label>
                             <Input
-                              placeholder="The Smith Family"
+                              placeholder="Thursday Book Club"
                               value={householdName}
                               onChange={e => setHouseholdName(e.target.value)}
                               onKeyDown={e => e.key === 'Enter' && createHousehold()}

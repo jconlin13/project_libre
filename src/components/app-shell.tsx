@@ -124,8 +124,8 @@ export function AppShell({ children, user }: AppShellProps) {
             </Sheet>
 
             <Link href="/dashboard" className="flex items-center gap-2.5">
-              <Image src="/logos/logo.svg" alt="Family Book Club" width={36} height={36} className="rounded" />
-              <span className="text-lg font-bold hidden sm:inline">Family Book Club</span>
+              <Image src="/logos/logo.svg" alt="Libre" width={36} height={36} className="rounded" />
+              <span className="text-lg font-bold hidden sm:inline">Libre</span>
             </Link>
 
             <nav className="hidden md:flex items-center gap-1.5">
@@ -237,7 +237,7 @@ export function AppShell({ children, user }: AppShellProps) {
 
       <footer className="border-t mt-8">
         <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
-          <span>Family Book Club</span>
+          <span>Libre</span>
           <div className="flex items-center gap-4">
             <button
               onClick={() => {

@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     if (!feedbackEmail) {
       // No email service configured — return mailto fallback
-      const subject = encodeURIComponent(`[Family Book Club] ${type}`)
+      const subject = encodeURIComponent(`[Libre] ${type}`)
       const body = encodeURIComponent(
         `Type: ${type}\nFrom: ${user.name} (${user.email})\n\nDetails:\n${details}`
       )

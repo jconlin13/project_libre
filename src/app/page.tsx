@@ -9,7 +9,7 @@ export default function LandingPage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <BookOpen className="h-6 w-6" />
-            <span className="text-xl font-semibold">Family Book Club</span>
+            <span className="text-xl font-semibold">Libre</span>
           </div>
           <Link href="/login">
             <Button>Sign In</Button>
@@ -20,11 +20,12 @@ export default function LandingPage() {
       <main className="container mx-auto px-4">
         <section className="flex flex-col items-center justify-center py-24 text-center">
           <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-6xl">
-            Your family&apos;s reading life, together
+            For Reading Together
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            A private dashboard that brings your family&apos;s Hardcover reading activity into one place.
-            Share recommendations, track what everyone&apos;s reading, and find your next great book.
+            A private space for your group&apos;s reading — bring your library from Goodreads or
+            Hardcover, share recommendations, see what everyone&apos;s reading, and find your next
+            great book.
           </p>
           <div className="mt-10 flex gap-4">
             <Link href="/login">

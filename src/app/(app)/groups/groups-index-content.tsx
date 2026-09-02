@@ -83,7 +83,7 @@ export function GroupsIndexContent() {
         <div>
           <h1 className="text-2xl font-bold">Your Groups</h1>
           <p className="text-muted-foreground text-sm">
-            Families, friends, book clubs — everyone you share reading with
+            Friends, book clubs, anyone you share reading with
           </p>
         </div>
         <div className="flex gap-2">
@@ -103,7 +103,7 @@ export function GroupsIndexContent() {
                 <div className="space-y-2">
                   <Label>Group Name</Label>
                   <Input
-                    placeholder="The Smith Family"
+                    placeholder="Thursday Book Club"
                     value={groupName}
                     onChange={e => setGroupName(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && createGroup()}
@@ -148,7 +148,7 @@ export function GroupsIndexContent() {
             <Users className="h-10 w-10 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-1">No groups yet</h3>
             <p className="text-sm text-muted-foreground max-w-md">
-              Create a group to share reading with family or friends, or join one with an invite code.
+              Create a group to share reading with the people you read alongside, or join one with an invite code.
             </p>
           </CardContent>
         </Card>

@@ -17,13 +17,13 @@ import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Family Book Club',
-  description: 'A private family book club overlay for Hardcover',
+  title: 'Libre',
+  description: 'A private space for your group\u2019s reading',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Family Book Club',
+    title: 'Libre',
   },
 }
 

@@ -102,8 +102,8 @@ export default function LoginPage() {
             </CardTitle>
             <CardDescription>
               {isRegistering
-                ? 'Create your Family Book Club account'
-                : 'Sign in to your Family Book Club'}
+                ? 'Create your Libre account'
+                : 'Sign in to your Libre'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -169,7 +169,7 @@ export default function LoginPage() {
             <BookOpen className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to your Family Book Club</CardDescription>
+          <CardDescription>Sign in to your Libre</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button

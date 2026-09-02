@@ -7,13 +7,13 @@ export default function AboutPage() {
     <div className="max-w-2xl mx-auto py-12">
       <div className="text-center mb-8">
         <BookOpen className="h-12 w-12 mx-auto mb-4 text-primary" />
-        <h1 className="text-3xl font-bold mb-2">Family Book Club</h1>
+        <h1 className="text-3xl font-bold mb-2">Libre</h1>
         <p className="text-muted-foreground">A private overlay for Hardcover</p>
       </div>
 
       <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
         <p>
-          Family Book Club is a private reading companion that brings your group&apos;s reading activity
+          Libre is a private reading companion that brings your group&apos;s reading activity
           together. It syncs with your Hardcover account to show what everyone is reading, track progress,
           share recommendations, and discover new books together.
         </p>
