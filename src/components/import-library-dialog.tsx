@@ -7,7 +7,7 @@ import { Upload, FileText, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-r
 import { toast } from 'sonner'
 import { parseGoodreadsCsv, summarize, type ParsedBook } from '@/lib/goodreads-csv'
 
-type Stage = 'choose' | 'preview' | 'importing' | 'enriching' | 'done'
+type Stage = 'choose' | 'preview' | 'importing' | 'resolving' | 'enriching' | 'done'
 
 interface ImportResult {
   imported: number
@@ -25,6 +25,8 @@ export function ImportLibraryDialog({ open, onOpenChange }: { open: boolean; onO
   const [fileName, setFileName] = useState('')
   const [result, setResult] = useState<ImportResult | null>(null)
   const [coversFound, setCoversFound] = useState(0)
+  const [matched, setMatched] = useState(0)
+  const [unmatched, setUnmatched] = useState(0)
   const [coversLeft, setCoversLeft] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -36,6 +38,8 @@ export function ImportLibraryDialog({ open, onOpenChange }: { open: boolean; onO
     setResult(null)
     setCoversFound(0)
     setCoversLeft(0)
+    setMatched(0)
+    setUnmatched(0)
     if (inputRef.current) inputRef.current.value = ''
   }
 
@@ -69,6 +73,30 @@ export function ImportLibraryDialog({ open, onOpenChange }: { open: boolean; onO
       setStage('preview')
     } catch {
       toast.error('Could not read that file.')
+    }
+  }
+
+  /**
+   * Match imported ISBNs to real Hardcover books, which gives them proper
+   * titles, covers, descriptions and page counts — and a working detail page,
+   * since they stop being ISBN-only records.
+   */
+  async function runResolution() {
+    setStage('resolving')
+    let guard = 0
+    try {
+      for (;;) {
+        const res = await fetch('/api/import/resolve', { method: 'POST' })
+        if (!res.ok) break
+        const { data } = await res.json()
+        if (data.unavailable) break // No Hardcover token available at all
+        setMatched(prev => prev + (data.resolved || 0))
+        setUnmatched(data.unmatched || 0)
+        if (data.done) break
+        if (++guard > 40) break
+      }
+    } catch {
+      // Best effort — the import itself already succeeded
     }
   }
 
@@ -118,6 +146,9 @@ export function ImportLibraryDialog({ open, onOpenChange }: { open: boolean; onO
       }
       setResult(data.data)
       setCoversLeft(data.data.imported + data.data.updated)
+      // Hardcover first — a matched book arrives with full metadata, so only
+      // the leftovers need a cover looked up elsewhere.
+      await runResolution()
       await runEnrichment()
     } catch {
       toast.error('Import failed')
@@ -250,6 +281,14 @@ export function ImportLibraryDialog({ open, onOpenChange }: { open: boolean; onO
           </div>
         )}
 
+        {stage === 'resolving' && (
+          <div className="py-10 text-center">
+            <Loader2 className="h-8 w-8 mx-auto mb-3 animate-spin text-primary" />
+            <p className="text-sm font-medium">Your books are in — matching them to full book data</p>
+            <p className="text-sm text-muted-foreground mt-1">{matched} matched</p>
+          </div>
+        )}
+
         {stage === 'enriching' && (
           <div className="py-10 text-center">
             <Loader2 className="h-8 w-8 mx-auto mb-3 animate-spin text-primary" />
@@ -275,9 +314,15 @@ export function ImportLibraryDialog({ open, onOpenChange }: { open: boolean; onO
                 {result.ranked} added to your rankings
                 {result.failed > 0 && ` · ${result.failed} failed`}
               </p>
+              {matched > 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {matched} matched to full book data
+                  {unmatched > 0 && ` · ${unmatched} kept basic details`}
+                </p>
+              )}
               {coversFound > 0 && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  {coversFound} covers found
+                  {coversFound} covers found separately
                 </p>
               )}
             </div>

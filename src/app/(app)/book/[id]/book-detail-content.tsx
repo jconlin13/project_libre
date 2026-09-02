@@ -107,6 +107,23 @@ export default function BookDetailContent({ bookId, userName, userId }: BookDeta
         const allUserBooks = [...readingBooks, ...finishedBooks, ...wantToReadBooks]
         const userBookMatch = allUserBooks.find((ub: any) => String(ub.book.id) === bookId)
 
+        // Shelf state comes from the local snapshot, which is the record of
+        // truth and the only source for anyone without a Hardcover account.
+        fetch(`/api/books/status?bookId=${encodeURIComponent(bookId)}`)
+          .then(r => r.json())
+          .then(d => {
+            const local = d.data
+            if (!local) return
+            if (local.statusId) setBookStatus(local.statusId)
+            if (local.rating) setUserRating(local.rating)
+            if (local.statusId === 3) {
+              setReadingProgress({ progress: 100, progress_pages: null })
+            } else if (local.progressPct != null) {
+              setReadingProgress({ progress: local.progressPct, progress_pages: null })
+            }
+          })
+          .catch(() => {})
+
         // Fetch media type, network readers, and comparative ranking (fire-and-forget)
         fetch(`/api/books/media-type?bookId=${bookId}`)
           .then(r => r.json())

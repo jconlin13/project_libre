@@ -419,3 +419,57 @@ export function getLibbySearchUrl(title: string, author: string): string {
 export function getHardcoverBookUrl(slug: string): string {
   return `https://hardcover.app/books/${slug}`
 }
+
+/**
+ * Resolve ISBNs to Hardcover books via the editions table.
+ *
+ * This is how an imported library gets real book data: the CSV gives us an
+ * ISBN, Hardcover gives us the book behind it. Batched, because a library is
+ * hundreds of books against a 60/minute limit — 20 ISBNs resolve in a single
+ * ~300ms request.
+ *
+ * Returns a map keyed by the ISBN we asked for, so callers can tell which
+ * lookups missed. Both isbn_13 and isbn_10 are matched, since Goodreads
+ * exports sometimes carry only the older form.
+ */
+export async function lookupBooksByIsbn(
+  token: string,
+  isbns: string[]
+): Promise<Map<string, HardcoverBook>> {
+  const result = new Map<string, HardcoverBook>()
+  if (isbns.length === 0) return result
+
+  const list = JSON.stringify(isbns)
+  const query = `{
+    editions(
+      where: {_or: [{isbn_13: {_in: ${list}}}, {isbn_10: {_in: ${list}}}]},
+      limit: ${Math.max(isbns.length * 3, 50)}
+    ) {
+      isbn_13
+      isbn_10
+      book {
+        ${BOOK_FIELDS}
+      }
+    }
+  }`
+
+  const data = await hardcoverQuery(token, query)
+  const editions = (data?.editions || []) as Array<{
+    isbn_13: string | null
+    isbn_10: string | null
+    book: HardcoverBook | null
+  }>
+
+  const requested = new Set(isbns)
+  for (const edition of editions) {
+    if (!edition.book) continue
+    // An ISBN can appear on several editions; the first with a book wins
+    for (const isbn of [edition.isbn_13, edition.isbn_10]) {
+      if (isbn && requested.has(isbn) && !result.has(isbn)) {
+        result.set(isbn, edition.book)
+      }
+    }
+  }
+
+  return result
+}
