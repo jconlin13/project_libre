@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       where: { userId: toUserId, householdId: { in: householdIds } },
     })
     if (!recipientMembership) {
-      return NextResponse.json({ error: 'Recipient not in your household' }, { status: 403 })
+      return NextResponse.json({ error: 'Recipient not in your group' }, { status: 403 })
     }
 
     // Verify article exists

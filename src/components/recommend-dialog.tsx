@@ -61,7 +61,7 @@ export function RecommendDialog({
 
   async function handleSend() {
     if (!selectedMemberId) {
-      toast.error('Select a family member')
+      toast.error('Select a group member')
       return
     }
     setSending(true)
@@ -115,7 +115,7 @@ export function RecommendDialog({
               </div>
             ) : members.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">
-                No household members found. Join or create a household first.
+                No group members found. Join or create a group first.
               </p>
             ) : (
               <div className="space-y-1">

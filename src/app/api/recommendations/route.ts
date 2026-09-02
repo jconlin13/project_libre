@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const isHouseholdMember = householdMembers.some(m => m.id === toUserId)
 
     if (!isHouseholdMember) {
-      return NextResponse.json({ error: 'Recipient not in your household' }, { status: 403 })
+      return NextResponse.json({ error: 'Recipient not in your group' }, { status: 403 })
     }
 
     const recommendation = await prisma.recommendation.create({

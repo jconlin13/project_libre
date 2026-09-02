@@ -152,7 +152,7 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
         body: JSON.stringify({ name: newName }),
       })
       if (res.ok) {
-        toast.success('Household renamed')
+        toast.success('Group renamed')
         setHouseholds(prev => prev.map(h => h.id === householdId ? { ...h, name: newName } : h))
         setEditingHouseholdName(prev => { const next = { ...prev }; delete next[householdId]; return next })
       } else {
@@ -234,7 +234,7 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
     try {
       const res = await fetch(`/api/households/${householdId}?action=leave`, { method: 'DELETE' })
       if (res.ok) {
-        toast.success('Left household')
+        toast.success('Left group')
         setHouseholds(prev => prev.filter(h => h.id !== householdId))
       } else {
         const data = await res.json()
@@ -455,7 +455,7 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
                   ) : household.name}
                 </CardTitle>
                 <CardDescription>
-                  {household.role === 'admin' ? 'You are an admin of this household' : 'You are a member of this household'}
+                  {household.role === 'admin' ? 'You are an admin of this group' : 'You are a member of this group'}
                 </CardDescription>
               </div>
               <Badge variant="outline" className="font-mono text-xs">
@@ -467,7 +467,7 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
             {/* Admin: Rename */}
             {household.role === 'admin' && (
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Household Name</Label>
+                <Label className="text-xs text-muted-foreground">Group Name</Label>
                 <div className="flex gap-2">
                   <Input
                     value={editingHouseholdName[household.id] ?? household.name}
@@ -548,7 +548,7 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
               onClick={() => setConfirmDialog({ type: 'leave', householdId: household.id })}
             >
               <LogOut className="h-3 w-3" />
-              Leave Household
+              Leave Group
             </Button>
           </CardContent>
         </Card>
@@ -603,7 +603,7 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
           <CardTitle className="text-lg">About</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>Family Book Club is a private overlay for Hardcover that brings your family&apos;s reading activity together.</p>
+          <p>Family Book Club is a private overlay for Hardcover that brings your group&apos;s reading activity together.</p>
           <p>Built with Next.js and the Hardcover GraphQL API.</p>
         </CardContent>
       </Card>
@@ -615,12 +615,12 @@ export function SettingsContent({ user, households: initialHouseholds }: Setting
             <DialogTitle>
               {confirmDialog?.type === 'remove-member' && 'Remove Member'}
               {confirmDialog?.type === 'regen-invite' && 'Regenerate Invite Code'}
-              {confirmDialog?.type === 'leave' && 'Leave Household'}
+              {confirmDialog?.type === 'leave' && 'Leave Group'}
             </DialogTitle>
             <DialogDescription>
-              {confirmDialog?.type === 'remove-member' && `Are you sure you want to remove ${confirmDialog.memberName} from this household?`}
+              {confirmDialog?.type === 'remove-member' && `Are you sure you want to remove ${confirmDialog.memberName} from this group?`}
               {confirmDialog?.type === 'regen-invite' && 'This will invalidate the current invite code. Anyone with the old code will no longer be able to join.'}
-              {confirmDialog?.type === 'leave' && 'Are you sure you want to leave this household? You will need a new invite code to rejoin.'}
+              {confirmDialog?.type === 'leave' && 'Are you sure you want to leave this group? You will need a new invite code to rejoin.'}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 pt-4">

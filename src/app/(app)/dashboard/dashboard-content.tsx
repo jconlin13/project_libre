@@ -199,7 +199,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
       } else {
         toast.error(data.error)
       }
-    } catch { toast.error('Failed to create household') }
+    } catch { toast.error('Failed to create group') }
   }
 
   async function joinHousehold() {
@@ -218,7 +218,7 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
       } else {
         toast.error(data.error)
       }
-    } catch { toast.error('Failed to join household') }
+    } catch { toast.error('Failed to join group') }
   }
 
   // Horizontal row of book covers with < > arrow navigation
@@ -574,24 +574,24 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
                   <Users className="h-10 w-10 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-1">Start a Family Book Club</h3>
                   <p className="text-sm text-muted-foreground mb-6 max-w-md">
-                    Create a household to share your reading with family, or join an existing one with an invite code.
+                    Create a group to share your reading with family or friends, or join an existing one with an invite code.
                   </p>
                   <div className="flex gap-4">
                     <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                       <DialogTrigger asChild>
                         <Button>
                           <Plus className="mr-2 h-4 w-4" />
-                          Create Household
+                          Create Group
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Create a Household</DialogTitle>
-                          <DialogDescription>Give your household a name. You&apos;ll get an invite code to share.</DialogDescription>
+                          <DialogTitle>Create a Group</DialogTitle>
+                          <DialogDescription>Give your group a name. You&apos;ll get an invite code to share.</DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 pt-4">
                           <div className="space-y-2">
-                            <Label>Household Name</Label>
+                            <Label>Group Name</Label>
                             <Input
                               placeholder="The Smith Family"
                               value={householdName}
@@ -606,12 +606,12 @@ export function DashboardContent({ currentUser, households, hasHousehold }: Dash
 
                     <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="outline">Join Household</Button>
+                        <Button variant="outline">Join Group</Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Join a Household</DialogTitle>
-                          <DialogDescription>Enter the invite code shared by a family member.</DialogDescription>
+                          <DialogTitle>Join a Group</DialogTitle>
+                          <DialogDescription>Enter the invite code shared by a group member.</DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 pt-4">
                           <div className="space-y-2">

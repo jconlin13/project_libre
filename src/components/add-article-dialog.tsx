@@ -115,7 +115,7 @@ export function AddArticleDialog({ open, onOpenChange, onSuccess }: AddArticleDi
         <DialogHeader>
           <DialogTitle>Share an Article</DialogTitle>
           <DialogDescription>
-            Paste a link or add manually. Your household will see it.
+            Paste a link or add manually. Your group will see it.
           </DialogDescription>
         </DialogHeader>
 
@@ -255,7 +255,7 @@ export function AddArticleDialog({ open, onOpenChange, onSuccess }: AddArticleDi
             className="w-full cursor-pointer"
             disabled={saving || (!title.trim() && !url.trim())}
           >
-            {saving ? 'Sharing...' : 'Share with household'}
+            {saving ? 'Sharing...' : 'Share with group'}
           </Button>
         </div>
       </DialogContent>

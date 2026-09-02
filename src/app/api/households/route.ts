@@ -41,7 +41,7 @@ export async function GET() {
     return NextResponse.json({ data: households })
   } catch (error) {
     console.error('Households error:', error)
-    return NextResponse.json({ error: 'Failed to fetch households' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 })
   }
 }
 
@@ -80,6 +80,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data: household })
   } catch (error) {
     console.error('Create household error:', error)
-    return NextResponse.json({ error: 'Failed to create household' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to create group' }, { status: 500 })
   }
 }

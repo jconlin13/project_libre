@@ -134,7 +134,7 @@ export function DiscoveryModule({ currentUserId }: { currentUserId: string }) {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              Loved by Your Household
+              Loved by Your Group
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -218,7 +218,7 @@ export function YearGoalsCard() {
         <div className="text-center py-4">
           <p className="text-5xl font-bold">{counts.total}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            {counts.total === 1 ? 'book' : 'books'} read together as a household
+            {counts.total === 1 ? 'book' : 'books'} read together as a group
           </p>
         </div>
         {counts.members.length > 0 && (

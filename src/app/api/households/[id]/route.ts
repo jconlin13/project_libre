@@ -30,7 +30,7 @@ export async function PATCH(
     return NextResponse.json({ data: { id: updated.id, name: updated.name } })
   } catch (error) {
     console.error('Household update error:', error)
-    return NextResponse.json({ error: 'Failed to update household' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to update group' }, { status: 500 })
   }
 }
 

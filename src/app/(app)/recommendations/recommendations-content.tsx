@@ -170,7 +170,7 @@ export function RecommendationsContent({ userId, hardcoverConnected }: Recommend
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Recommendations</h1>
-          <p className="text-muted-foreground">Books your family thinks you&apos;ll love</p>
+          <p className="text-muted-foreground">Books your group thinks you&apos;ll love</p>
         </div>
         {hardcoverConnected && members.length > 0 && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -183,7 +183,7 @@ export function RecommendationsContent({ userId, hardcoverConnected }: Recommend
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Recommend a Book</DialogTitle>
-                <DialogDescription>Search for a book and recommend it to a family member.</DialogDescription>
+                <DialogDescription>Search for a book and recommend it to a group member.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-4">
                 <div className="flex gap-2">
@@ -241,7 +241,7 @@ export function RecommendationsContent({ userId, hardcoverConnected }: Recommend
                   <Label>Recommend to</Label>
                   <Select value={selectedRecipient} onValueChange={setSelectedRecipient}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a family member" />
+                      <SelectValue placeholder="Select a group member" />
                     </SelectTrigger>
                     <SelectContent>
                       {members.map(m => (

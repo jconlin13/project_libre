@@ -123,6 +123,6 @@ export async function GET() {
     return NextResponse.json({ data: favorites })
   } catch (error) {
     console.error('Household favorites error:', error)
-    return NextResponse.json({ error: 'Failed to fetch household favorites' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch group favorites' }, { status: 500 })
   }
 }

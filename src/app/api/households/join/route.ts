@@ -47,6 +47,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data: { householdName: household.name } })
   } catch (error) {
     console.error('Join household error:', error)
-    return NextResponse.json({ error: 'Failed to join household' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to join group' }, { status: 500 })
   }
 }

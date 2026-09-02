@@ -36,13 +36,13 @@ export default function LandingPage() {
         <section className="grid gap-8 pb-24 sm:grid-cols-2 lg:grid-cols-4">
           <FeatureCard
             icon={<Users className="h-8 w-8" />}
-            title="Family Dashboard"
-            description="See what everyone in your household is reading, finishing, and rating."
+            title="Group Dashboard"
+            description="See what everyone in your group is reading, finishing, and rating."
           />
           <FeatureCard
             icon={<Heart className="h-8 w-8" />}
             title="Recommendations"
-            description="Sponsor books to family members and see if they add it to their list."
+            description="Sponsor books to group members and see if they add it to their list."
           />
           <FeatureCard
             icon={<BookOpen className="h-8 w-8" />}

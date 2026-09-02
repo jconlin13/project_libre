@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!isSameHousehold) {
-      return NextResponse.json({ error: 'Not in same household' }, { status: 403 })
+      return NextResponse.json({ error: 'Not in same group' }, { status: 403 })
     }
 
     const member = await prisma.user.findUnique({ where: { id: memberId } })

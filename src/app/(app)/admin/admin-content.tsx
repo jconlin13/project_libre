@@ -70,7 +70,7 @@ export function AdminContent() {
               tab === t ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             }`}
           >
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+            {t === 'households' ? 'Groups' : t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
       </div>
@@ -100,7 +100,7 @@ function OverviewTab() {
 
   const cards = [
     { label: 'Total Users', value: stats.userCount, icon: Users },
-    { label: 'Households', value: stats.householdCount, icon: Home },
+    { label: 'Groups', value: stats.householdCount, icon: Home },
     { label: 'Articles Shared', value: stats.articleCount, icon: BookOpen },
     { label: 'Recommendations', value: stats.recommendationCount, icon: ThumbsUp },
     { label: 'Active (30d)', value: stats.activeUsersLast30Days, icon: Activity },
@@ -364,16 +364,16 @@ function HouseholdsTab() {
     fetch('/api/admin/households')
       .then(r => r.json())
       .then(r => setHouseholds(r.data))
-      .catch(() => toast.error('Failed to load households'))
+      .catch(() => toast.error('Failed to load groups'))
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <p className="text-muted-foreground">Loading households...</p>
+  if (loading) return <p className="text-muted-foreground">Loading groups...</p>
 
   return (
     <div className="space-y-4">
       {households.length === 0 ? (
-        <p className="text-muted-foreground">No households found.</p>
+        <p className="text-muted-foreground">No groups found.</p>
       ) : (
         households.map(h => (
           <Card key={h.id}>
@@ -418,8 +418,8 @@ const ACTION_LABELS: Record<string, string> = {
   logout: 'Logout',
   profile_update: 'Profile Update',
   account_delete: 'Account Deleted',
-  household_rename: 'Household Renamed',
-  household_leave: 'Left Household',
+  household_rename: 'Group Renamed',
+  household_leave: 'Left Group',
   invite_regen: 'Invite Code Regenerated',
   role_change: 'Role Changed',
   member_remove: 'Member Removed',

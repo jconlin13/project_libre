@@ -13,7 +13,7 @@ export default function AboutPage() {
 
       <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
         <p>
-          Family Book Club is a private reading companion that brings your family&apos;s reading activity
+          Family Book Club is a private reading companion that brings your group&apos;s reading activity
           together. It syncs with your Hardcover account to show what everyone is reading, track progress,
           share recommendations, and discover new books together.
         </p>
@@ -21,10 +21,10 @@ export default function AboutPage() {
         <div>
           <h2 className="text-base font-semibold text-foreground mb-2">What you can do</h2>
           <ul className="list-disc list-inside space-y-1.5">
-            <li>See what your family members are reading right now</li>
+            <li>See what your group members are reading right now</li>
             <li>Track your reading progress and update it from the dashboard</li>
             <li>Rate and review books</li>
-            <li>Recommend books to family members</li>
+            <li>Recommend books to group members</li>
             <li>Find books at your local library through Libby</li>
           </ul>
         </div>

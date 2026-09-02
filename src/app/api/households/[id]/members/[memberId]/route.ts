@@ -25,7 +25,7 @@ export async function PATCH(
       where: { householdId, user: { id: memberId } },
     })
     if (!targetMembership) {
-      return NextResponse.json({ error: 'Member not found in this household' }, { status: 404 })
+      return NextResponse.json({ error: 'Member not found in this group' }, { status: 404 })
     }
 
     // Can't demote yourself if you're the last admin
@@ -75,7 +75,7 @@ export async function DELETE(
       where: { householdId, user: { id: memberId } },
     })
     if (!targetMembership) {
-      return NextResponse.json({ error: 'Member not found in this household' }, { status: 404 })
+      return NextResponse.json({ error: 'Member not found in this group' }, { status: 404 })
     }
 
     await prisma.householdMember.delete({
